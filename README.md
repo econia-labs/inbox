@@ -37,12 +37,11 @@ documentation](https://postgrest.org/) for more information about querying.
 
 ### Managing
 
-To temporarly stop Inbox, run  `docker compose -p inbox -f compose.yaml stop`.
+To temporally stop Inbox, run  `docker compose -p inbox -f compose.yaml stop`.
 
 To resume Inbox, run  `docker compose -p inbox -f compose.yaml start`.
 
-To reset Inbox state, run `docker compose -p inbox -f compose.yaml down &&
-docker volume rm inbox_db`
+To reset Inbox state, run `docker compose -p inbox -f compose.yaml down && docker volume rm inbox_db`
 
 ## Indexes
 
@@ -51,5 +50,5 @@ to your database using `psql postgres://econia:econia@localhost:5432/econia`
 and create some. Here is an example:
 
 ```sql
-CREATE INDEX exmaple_index ON events (((data->'column')::text));
+CREATE INDEX example_index ON events (((data->'column')::text));
 ```

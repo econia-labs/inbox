@@ -1,0 +1,14 @@
+Aptos
+Econia
+PGRST
+PostgREST
+PostgreSQL
+autofix
+clippy
+devnet
+healthcheck
+isready
+mainnet
+mdformat
+psql
+testnet

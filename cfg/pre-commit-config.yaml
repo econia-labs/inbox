@@ -1,0 +1,52 @@
+---
+repos:
+  - repo: 'https://github.com/pre-commit/pre-commit-hooks'
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: file-contents-sorter
+        files: cfg/cspell-dictionary.txt
+        args:
+          - '--unique'
+      - id: mixed-line-ending
+      - id: pretty-format-json
+        args:
+          - '--autofix'
+      - id: trailing-whitespace
+  - repo: 'https://github.com/executablebooks/mdformat'
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm
+  - repo: 'https://github.com/streetsidesoftware/cspell-cli'
+    rev: v8.3.0
+    hooks:
+      - id: cspell
+        args:
+          - '--config'
+          - cfg/cspell-config.json
+          - '--quiet'
+          - '--gitignore'
+  - repo: 'https://github.com/doublify/pre-commit-rust'
+    rev: v1.0
+    hooks:
+      - id: fmt
+        args:
+          - '--manifest-path'
+          - src/rust/Cargo.toml
+          - '--'
+      - id: cargo-check
+        args:
+          - '--manifest-path'
+          - src/rust/Cargo.toml
+          - '--'
+      - id: clippy
+        args:
+          - '--manifest-path'
+          - src/rust/Cargo.toml
+          - '--'
+...
