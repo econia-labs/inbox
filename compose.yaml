@@ -1,9 +1,9 @@
 services:
   postgres:
     environment:
-      POSTGRES_USER: "econia"
-      POSTGRES_DB: "econia"
-      POSTGRES_PASSWORD: "econia"
+      POSTGRES_USER: "inbox"
+      POSTGRES_DB: "inbox"
+      POSTGRES_PASSWORD: "inbox"
     image: postgres:14-bookworm
     ports:
       - "5432:5432"
@@ -11,7 +11,7 @@ services:
     volumes:
       - "db:/var/lib/postgresql/data"
     healthcheck:
-      test: pg_isready -h localhost -p 5432 -U econia || exit 1
+      test: pg_isready -h localhost -p 5432 -U inbox || exit 1
       interval: 5s
       timeout: 3s
       retries: 3
@@ -23,7 +23,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      PGRST_DB_URI: "postgres://econia:econia@postgres:5432/econia"
+      PGRST_DB_URI: "postgres://inbox:inbox@postgres:5432/inbox"
       PGRST_DB_ANON_ROLE: web_anon
       PGRST_DB_MAX_ROWS: ${POSTGREST_MAX_ROWS}
     image: postgrest/postgrest
@@ -36,7 +36,7 @@ services:
       context: .
       dockerfile: processor/rust/Dockerfile
     environment:
-      DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
+      DATABASE_URL: "postgres://inbox:inbox@postgres:5432/inbox"
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
       GRPC_AUTH_TOKEN: ${GRPC_AUTH_TOKEN}
       GRPC_DATA_SERVICE_URL: ${GRPC_DATA_SERVICE_URL}

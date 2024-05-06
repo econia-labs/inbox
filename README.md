@@ -46,7 +46,7 @@ To reset Inbox state, run `docker compose -p inbox -f compose.yaml down && docke
 ## Indexes
 
 If you have many events, you might need indices. To create some, simply connect
-to your database using `psql postgres://econia:econia@localhost:5432/econia`
+to your database using `psql postgres://inbox:inbox@localhost:5432/inbox`
 and create some. Here is an example:
 
 ```sql
