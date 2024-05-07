@@ -43,12 +43,13 @@ To resume Inbox, run  `docker compose -p inbox -f compose.yaml start`.
 
 To reset Inbox state, run `docker compose -p inbox -f compose.yaml down && docker volume rm inbox_db`
 
-## Indexes
+## SQL extensions
 
-If you have many events, you might need indices. To create some, simply connect
-to your database using `psql postgres://inbox:inbox@localhost:5432/inbox`
-and create some. Here is an example:
+If you have many events, you might need indices. To create some, add an `sql`
+file in `sql_extensions/migrations`. Here is an example:
 
 ```sql
 CREATE INDEX example_index ON events (((data->'column')::text));
 ```
+
+You can also add view and functions to extend your API.
