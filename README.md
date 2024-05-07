@@ -11,7 +11,7 @@ The only dependency you need is Docker.
 
 ### Step 0: Cloning
 
-First, clone this project: `git clone https://github.com/CRBl69/inbox`.
+First, clone this project: `git clone https://github.com/econia-labs/inbox`.
 
 Then, clone git submodules: `git submodule update --init --recursive`.
 
