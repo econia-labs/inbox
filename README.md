@@ -28,12 +28,15 @@ Simply start Inbox by running `docker compose -p inbox -f compose.yaml up -d`.
 
 ### Querying
 
-All events are available at `/events`.
+All events are available at `/inbox_events`.
 
 The event data is in the `data` field.
 
 The REST API is generated using PostgREST. Visit the [PostgREST
 documentation](https://postgrest.org/) for more information about querying.
+
+You can also query using PostgreSQL. The default database URL is
+`postgres://inbox:inbox@postgres:5432/inbox`.
 
 ### Managing
 
