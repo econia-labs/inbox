@@ -63,7 +63,9 @@ async fn postgres_notif_loop(
                         .await?;
                 } else {
                     eprintln!("Got notification on inbox_event that cannot be deserialized to an Event struct {}.", notification.payload());
-                    eprintln!("Please refer to the Inbox documentation on how to create events for MQTT.");
+                    eprintln!(
+                        "Please refer to the Inbox documentation on how to create events for MQTT."
+                    );
                 }
             }
             _ => {}
