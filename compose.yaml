@@ -5,8 +5,6 @@ services:
       POSTGRES_DB: "inbox"
       POSTGRES_PASSWORD: "inbox"
     image: postgres:14-bookworm
-    ports:
-      - "5432:5432"
     restart: always
     volumes:
       - "db:/var/lib/postgresql/data"
@@ -32,6 +30,8 @@ services:
     restart: unless-stopped
 
   processor:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     build:
       context: .
       dockerfile: processor/rust/Dockerfile
