@@ -48,6 +48,8 @@ To reset Inbox state, run `docker compose -p inbox -f compose.yaml down && docke
 
 ## SQL extensions
 
+### Indices
+
 If you have many events, you might need indices. To create some, add an `sql`
 file in `sql_extensions/migrations`. Here is an example:
 
@@ -55,4 +57,45 @@ file in `sql_extensions/migrations`. Here is an example:
 CREATE INDEX example_index ON events (((data->'column')::text));
 ```
 
+### Views/functions
+
 You can also add view and functions to extend your API.
+
+These will then be queryable through PostgREST. We highly encourage you to read
+the [PostgREST documentation](https://postgrest.org/).
+
+Here is a quick rundown of how to go about it:
+
+```sql
+CREATE VIEW nfts_minted_per_user AS
+SELECT COUNT(*)
+FROM inbox_events
+WHERE "type" = '0x...::...::NftMinted'
+GROUP BY data->>'user_address';
+```
+
+You must also make sure that the SQL user `web_anon` has READ access (and *READ ONLY*) to this table.
+
+### Events
+
+You can also use SQL extensions to create events that will then appear in MQTT. To do so, follow this example:
+
+```sql
+CREATE OR REPLACE FUNCTION notify_event()
+  RETURNS trigger AS $$
+DECLARE
+BEGIN
+  PERFORM pg_notify(
+    'inbox_event',
+    (SELECT jsonb_build_object('topic', NEW.type, 'payload', to_jsonb(NEW))::text));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER notify_event
+  AFTER INSERT ON inbox_events
+  FOR EACH ROW
+  EXECUTE PROCEDURE notify_event();
+```
+
+This will emit an MQTT event with the topic as your event type for all your contract's events.
