@@ -1,4 +1,21 @@
 services:
+  mqtt:
+    build:
+      context: mqtt-publisher
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      processor:
+        condition: service_started
+    environment:
+      DATABASE_URL: "postgres://inbox:inbox@postgres:5432/inbox"
+      MQTT_PASSWORD: ${MOSQUITTO_PASSWORD}
+    ports:
+      - "21883:21883"
+      - "21884:21884"
+    restart: unless-stopped
+
   postgres:
     environment:
       POSTGRES_USER: "inbox"
@@ -45,6 +62,7 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    stop_signal: SIGKILL
 
   sql_extensions:
     build:
@@ -55,6 +73,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      processor:
+        condition: service_started
 
 volumes:
   db:

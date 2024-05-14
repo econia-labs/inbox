@@ -1,0 +1,16 @@
+[package]
+name = "mqtt-publisher"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+chrono = "0.4.38"
+serde = "1.0"
+serde_json = "1.0"
+sqlx = { version = "0.7.4", features = ["postgres", "chrono", "bigdecimal", "runtime-tokio"] }
+sqlx-postgres = "0.7.4"
+tokio = { version = "1.37", features = ["full"] }
+rumqttc = { version = "0.24.0", features = ["url", "use-rustls", "websocket"] }
