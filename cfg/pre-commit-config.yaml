@@ -37,16 +37,24 @@ repos:
       - id: fmt
         args:
           - '--manifest-path'
-          - src/rust/Cargo.toml
+          - mqtt-publisher/Cargo.toml
           - '--'
       - id: cargo-check
         args:
           - '--manifest-path'
-          - src/rust/Cargo.toml
+          - mqtt-publisher/Cargo.toml
           - '--'
       - id: clippy
         args:
           - '--manifest-path'
-          - src/rust/Cargo.toml
+          - mqtt-publisher/Cargo.toml
           - '--'
+  - repo: 'https://github.com/sqlfluff/sqlfluff'
+    rev: 3.0.6
+    hooks:
+      - id: sqlfluff-lint
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
 ...

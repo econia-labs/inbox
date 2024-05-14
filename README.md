@@ -61,7 +61,7 @@ CREATE INDEX example_index ON events (((data->'column')::text));
 
 You can also add view and functions to extend your API.
 
-These will then be queriable through PostgREST. We highly encourage you to read
+These will then be queryable through PostgREST. We highly encourage you to read
 the [PostgREST documentation](https://postgrest.org/).
 
 Here is a quick rundown of how to go about it:
