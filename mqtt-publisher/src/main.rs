@@ -44,31 +44,28 @@ async fn postgres_notif_loop(
     db_url: &str,
     mqtt_client: Arc<RwLock<AsyncClient>>,
 ) -> anyhow::Result<()> {
-    let mut listener = PgListener::connect(&db_url).await?;
+    let mut listener = PgListener::connect(db_url).await?;
     listener.listen_all(vec!["inbox_event"]).await?;
     loop {
         let notification = listener.recv().await?;
         let mqtt_client = mqtt_client.read().await;
-        match notification.channel() {
-            "inbox_event" => {
-                let event: serde_json::Result<Event> = serde_json::from_str(notification.payload());
-                if let Ok(event) = event {
-                    mqtt_client
-                        .publish(
-                            event.topic,
-                            QoS::AtLeastOnce,
-                            false,
-                            serde_json::to_string(&event.payload)?,
-                        )
-                        .await?;
-                } else {
-                    eprintln!("Got notification on inbox_event that cannot be deserialized to an Event struct {}.", notification.payload());
-                    eprintln!(
-                        "Please refer to the Inbox documentation on how to create events for MQTT."
-                    );
-                }
+        if notification.channel() == "inbox_event" {
+            let event: serde_json::Result<Event> = serde_json::from_str(notification.payload());
+            if let Ok(event) = event {
+                mqtt_client
+                    .publish(
+                        event.topic,
+                        QoS::AtLeastOnce,
+                        false,
+                        serde_json::to_string(&event.payload)?,
+                    )
+                    .await?;
+            } else {
+                eprintln!("Got notification on inbox_event that cannot be deserialized to an Event struct {}.", notification.payload());
+                eprintln!(
+                    "Please refer to the Inbox documentation on how to create events for MQTT."
+                );
             }
-            _ => {}
         }
     }
 }
