@@ -6,5 +6,5 @@ max_line_length = 120
 
 processes = -1
 
-[sqlfluff:rules:capitalisation:keywords]
+[sqlfluff:rules:capitalisation.keywords]
 capitalisation_policy = upper
