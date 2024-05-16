@@ -48,6 +48,10 @@ To reset Inbox state, run `docker compose -p inbox -f compose.yaml down && docke
 
 ## SQL extensions
 
+SQL extensions are stored under `sql_extensions/migrations/`.
+
+The files must end with `.sql` and not be `00000_init.sql`.
+
 ### Indices
 
 If you have many events, you might need indices. To create some, add an `sql`
