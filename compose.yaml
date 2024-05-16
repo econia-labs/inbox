@@ -3,6 +3,10 @@ services:
     build:
       context: mqtt-publisher
       dockerfile: Dockerfile
+      cache_from:
+        - type=gha
+      cache_to:
+        - type=gha,mode=max
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,6 +56,10 @@ services:
     build:
       context: .
       dockerfile: processor/rust/Dockerfile
+      cache_from:
+        - type=gha
+      cache_to:
+        - type=gha,mode=max
     environment:
       DATABASE_URL: "postgres://inbox:inbox@postgres:5432/inbox"
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
@@ -68,6 +76,10 @@ services:
     build:
       context: .
       dockerfile: sql_extensions/Dockerfile
+      cache_from:
+        - type=gha
+      cache_to:
+        - type=gha,mode=max
     environment:
       DATABASE_URL: "postgres://inbox:inbox@postgres:5432/inbox"
     depends_on:

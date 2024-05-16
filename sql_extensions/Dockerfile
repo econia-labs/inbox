@@ -1,6 +1,6 @@
-FROM alpine:20240329
+FROM alpine:3.19.1
 
-RUN apk --no-cache add postgresql16-client=16.2-r4 bash=5.2.26-r0
+RUN apk --no-cache add postgresql16-client=16.3-r0 bash=5.2.21-r0
 
 WORKDIR /
 
