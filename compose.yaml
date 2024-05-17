@@ -11,6 +11,7 @@ services:
     environment:
       DATABASE_URL: "postgres://inbox:inbox@postgres:5432/inbox"
       MQTT_PASSWORD: ${MOSQUITTO_PASSWORD}
+    image: econialabs/inbox:mqtt
     ports:
       - "21883:21883"
       - "21884:21884"
@@ -61,6 +62,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    image: econialabs/inbox:processor
     restart: unless-stopped
     stop_signal: SIGKILL
 
@@ -75,6 +77,9 @@ services:
         condition: service_healthy
       processor:
         condition: service_started
+    image: econialabs/inbox:sql_extensions
+    volumes:
+      - ./sql_extensions/migrations/:/migrations
 
 volumes:
   db:

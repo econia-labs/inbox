@@ -9,6 +9,7 @@ capitalisation
 chrono
 clippy
 devnet
+econialabs
 eventloop
 eventpoll
 hadolint
