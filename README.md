@@ -15,9 +15,9 @@ First, clone this project: `git clone https://github.com/econia-labs/inbox`.
 
 Then, clone git submodules: `git submodule update --init --recursive`.
 
-NOTE: If you are running this command from [emojicoin dot fun] repository,
-you need to specify to only update `src/inbox` if you don't have access to
-the private TradingView `charting_library` repository.
+NOTE: If you are running this command from the [emojicoin dot fun] repository,
+you need to specify that you only want to update `src/inbox` if you don't have
+access to the private TradingView `charting_library` repository.
 
 ```shell
 git submodule update --init --recursive src/inbox
