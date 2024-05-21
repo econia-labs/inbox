@@ -116,7 +116,9 @@ This will emit an MQTT event with the topic as your event type for all your cont
 
 You can deploy this repo on GCP using Terraform.
 
-To do so, you first need to create a GCP project and get a credentials file stored at `terraform/creds.json`.
+To do so, you first need to create a GCP project.
+
+Once done, run `PROJECT_ID=<YOUR_PROJECT_ID> terraform/init.sh` to enable the required Google APIs, create a service account, and download the credentials file.
 
 Then, simply run `terraform apply -var-file variables.tfvars`.
 
