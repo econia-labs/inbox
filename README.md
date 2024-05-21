@@ -113,4 +113,3 @@ CREATE TRIGGER notify_event
 This will emit an MQTT event with the topic as your event type for all your contract's events.
 
 [emojicoin dot fun]: https://github.com/econia-labs/emojicoin-dot-fun
-
