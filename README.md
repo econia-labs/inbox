@@ -112,4 +112,12 @@ CREATE TRIGGER notify_event
 
 This will emit an MQTT event with the topic as your event type for all your contract's events.
 
+## Terraform
+
+You can deploy this repo on GCP using Terraform.
+
+To do so, you first need to create a GCP project and get a credentials file stored at `terraform/creds.json`.
+
+Then, simply run `terraform apply -var-file variables.tfvars`.
+
 [emojicoin dot fun]: https://github.com/econia-labs/emojicoin-dot-fun
