@@ -15,6 +15,14 @@ First, clone this project: `git clone https://github.com/econia-labs/inbox`.
 
 Then, clone git submodules: `git submodule update --init --recursive`.
 
+NOTE: If you are running this command from the [emojicoin dot fun] repository,
+you need to specify that you only want to update `src/inbox` if you don't have
+access to the private TradingView `charting_library` repository.
+
+```shell
+git submodule update --init --recursive src/inbox
+```
+
 ### Step 1: Configuration
 
 Copy `example.env` to `.env` and update the required fields. Field
@@ -103,3 +111,5 @@ CREATE TRIGGER notify_event
 ```
 
 This will emit an MQTT event with the topic as your event type for all your contract's events.
+
+[emojicoin dot fun]: https://github.com/econia-labs/emojicoin-dot-fun
