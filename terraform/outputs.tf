@@ -82,7 +82,7 @@ output "grafana_public_password" {
 
 output "mosquitto_password" {
   sensitive = true
-  value = var.mosquitto_password
+  value     = var.mosquitto_password
 }
 
 output "mqtt_ip" {

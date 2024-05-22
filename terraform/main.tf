@@ -17,9 +17,9 @@ provider "google" {
 
 provider "google-beta" {
   credentials = "creds.json"
-  project = var.project_id
-  region  = var.region
-  zone    = var.zone
+  project     = var.project_id
+  region      = var.region
+  zone        = var.zone
 }
 
 module "db" {
@@ -56,11 +56,11 @@ module "postgrest" {
 }
 
 module "mqtt" {
-  db_conn_str_private   = module.db.db_conn_str_private
-  mosquitto_password    = var.mosquitto_password
-  source                = "./modules/mqtt"
-  sql_network_id        = module.db.sql_network_id
-  zone                  = var.zone
+  db_conn_str_private = module.db.db_conn_str_private
+  mosquitto_password  = var.mosquitto_password
+  source              = "./modules/mqtt"
+  sql_network_id      = module.db.sql_network_id
+  zone                = var.zone
 }
 
 module "grafana" {
