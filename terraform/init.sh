@@ -2,13 +2,16 @@
 
 set -e
 
+which jq > /dev/null 2>&1 || echo "ERROR: cannot find jq in PATH." && exit 1
+which cloud-sql-proxy > /dev/null 2>&1 || echo "ERROR: cannot find cloud-sql-proxy in PATH." && exit 1
+
 if [[ -z "$PROJECT_ID" ]]; then
     echo "Must provide PROJECT_ID in environment" 1>&2
     exit 1
 fi
 
 echo "Setting project:"
-gcloud config set project $PROJECT_ID
+gcloud config set project "$PROJECT_ID"
 
 echo "Enabling GCP APIs (be patient):"
 gcloud services enable \

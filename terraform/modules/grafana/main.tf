@@ -3,7 +3,7 @@ locals {
   # Do not use a space in this name, since the destroy-time provisioner
   # for the data source depends on a URL encode function that uses `+`
   # instead of `%20`, which the relevant API relies on.
-  data_source_name = "DSS"
+  data_source_name = "inbox"
   # SQL migrations define read-only role,
   # compromised password okay for private networking
   grafana_role_pw       = "grafana"
