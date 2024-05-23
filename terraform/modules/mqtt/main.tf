@@ -39,7 +39,7 @@ data "external" "ip" {
       join(" ", [
         "gcloud compute instances list",
         "--filter name=mqtt",
-        "--format json(networkInterfaces[0].accessConfigs[0].natIP)",
+        "--format 'json(networkInterfaces[0].accessConfigs[0].natIP)'",
       ]),
       # Parse natural IP address field from JSON output.
       "| jq '.[0].networkInterfaces[0].accessConfigs[0]'",
