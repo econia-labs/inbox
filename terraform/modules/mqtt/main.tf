@@ -34,6 +34,15 @@ data "external" "ip" {
   program = [
     "bash",
     "-c",
-    "gcloud compute instances list --filter name=mqtt --format 'json(networkInterfaces[0].accessConfigs[0].natIP)' | jq '.[0].networkInterfaces[0].accessConfigs[0]'",
+    join(" ", [
+      # Query gcloud CLI for natural IP address field of MQTT instance.
+      join(" ", [
+        "gcloud compute instances list",
+        "--filter name=mqtt",
+        "--format json(networkInterfaces[0].accessConfigs[0].natIP)",
+      ]),
+      # Parse natural IP address field from JSON output.
+      "| jq '.[0].networkInterfaces[0].accessConfigs[0]'",
+    ]),
   ]
 }
