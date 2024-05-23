@@ -4,5 +4,6 @@ CREATE TABLE sql_extensions (
 
 
 CREATE USER web_anon NOLOGIN;
+GRANT web_anon TO postgres;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO web_anon;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO web_anon;

@@ -1,1 +1,8 @@
 .env
+terraform/creds.json
+terraform/.terraform
+terraform/.terraform.lock.hcl
+terraform/.terraform.tfstate.lock.info
+terraform/*.tfvars
+terraform/*.tfstate
+terraform/*.backup
