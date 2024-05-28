@@ -33,6 +33,8 @@ services:
       retries: 3
       start_period: 15s
       start_interval: 5s
+    ports:
+      - "5432:5432"
 
   postgrest:
     depends_on:
