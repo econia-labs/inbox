@@ -1,4 +1,4 @@
--- migrations/00002_add_get_top_markets_function.sql
+-- migrations/00001_add_get_top_markets_function.sql
 
 -- Function to get the top markets by market_cap
 CREATE OR REPLACE FUNCTION get_top_markets(
