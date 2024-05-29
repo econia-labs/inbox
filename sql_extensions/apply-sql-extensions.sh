@@ -9,5 +9,6 @@ if [ -d "$script_dir/migrations" ]; then
         if [ "$(psql $DATABASE_URL --csv -t -c "SELECT COUNT(*) FROM sql_extensions WHERE name = '($(basename $file))'" 2>/dev/null)" != "1" ];then
             psql $DATABASE_URL --single-transaction -f "$file" -c "INSERT INTO sql_extensions VALUES ('$(basename $file)');"
         fi
+        psql $DATABASE_URL -t -c "NOTIFY pgrst, 'reload schema';"
     done
 fi
