@@ -6,5 +6,6 @@ WORKDIR /
 
 COPY sql_extensions/00000_init.sql .
 COPY sql_extensions/apply-sql-extensions.sh .
+COPY sql_extensions/migrations migrations
 
 CMD ["bash", "./apply-sql-extensions.sh"]
