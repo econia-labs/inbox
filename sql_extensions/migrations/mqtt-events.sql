@@ -1,6 +1,5 @@
 CREATE OR REPLACE FUNCTION notify_periodic_event()
 RETURNS trigger AS $$
-DECLARE
 BEGIN
   PERFORM pg_notify(
     'inbox_event',
@@ -17,7 +16,6 @@ EXECUTE PROCEDURE notify_periodic_event();
 
 CREATE OR REPLACE FUNCTION notify_metadata_event()
 RETURNS trigger AS $$
-DECLARE
 BEGIN
   PERFORM pg_notify(
     'inbox_event',
@@ -34,7 +32,6 @@ EXECUTE PROCEDURE notify_metadata_event();
 
 CREATE OR REPLACE FUNCTION notify_flat_event()
 RETURNS trigger AS $$
-DECLARE
 BEGIN
   PERFORM pg_notify(
     'inbox_event',
@@ -51,7 +48,6 @@ EXECUTE PROCEDURE notify_flat_event();
 
 CREATE OR REPLACE FUNCTION notify_swap_event()
 RETURNS trigger AS $$
-DECLARE
 BEGIN
   PERFORM pg_notify(
     'inbox_event',
