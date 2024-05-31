@@ -20,6 +20,8 @@ emojico
 emojicoin
 eventloop
 eventpoll
+foldenable
+foldmethod
 gcloud
 googleapis
 grpc
@@ -53,6 +55,7 @@ sqlx
 sslmode
 subnetwork
 subnetworks
+templater
 testnet
 tfstate
 tfvars
