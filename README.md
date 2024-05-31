@@ -95,7 +95,6 @@ You can also use SQL extensions to create events that will then appear in MQTT. 
 ```sql
 CREATE OR REPLACE FUNCTION notify_event()
   RETURNS trigger AS $$
-DECLARE
 BEGIN
   PERFORM pg_notify(
     'inbox_event',
