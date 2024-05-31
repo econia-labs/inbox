@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION notify_periodic_event()
-  RETURNS trigger AS $$
+RETURNS trigger AS $$
 DECLARE
 BEGIN
   PERFORM pg_notify(
@@ -10,13 +10,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER notify_periodic_event
-  AFTER INSERT ON inbox_events
-  FOR EACH ROW
-  WHEN (NEW.data ? 'market_metadata' AND NEW.data ? 'periodic_state_metadata')
-  EXECUTE PROCEDURE notify_periodic_event();
+AFTER INSERT ON inbox_events
+FOR EACH ROW
+WHEN (new.data ? 'market_metadata' AND new.data ? 'periodic_state_metadata')
+EXECUTE PROCEDURE notify_periodic_event();
 
 CREATE OR REPLACE FUNCTION notify_metadata_event()
-  RETURNS trigger AS $$
+RETURNS trigger AS $$
 DECLARE
 BEGIN
   PERFORM pg_notify(
@@ -27,13 +27,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER notify_metadata_event
-  AFTER INSERT ON inbox_events
-  FOR EACH ROW
-  WHEN (NEW.data ? 'market_metadata' AND NOT NEW.data ? 'periodic_state_metadata')
-  EXECUTE PROCEDURE notify_metadata_event();
+AFTER INSERT ON inbox_events
+FOR EACH ROW
+WHEN (new.data ? 'market_metadata' AND NOT new.data ? 'periodic_state_metadata')
+EXECUTE PROCEDURE notify_metadata_event();
 
 CREATE OR REPLACE FUNCTION notify_flat_event()
-  RETURNS trigger AS $$
+RETURNS trigger AS $$
 DECLARE
 BEGIN
   PERFORM pg_notify(
@@ -44,13 +44,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER notify_flat_event
-  AFTER INSERT ON inbox_events
-  FOR EACH ROW
-  WHEN (NEW.data ? 'market_id' AND NOT NEW.data ? 'results_in_state_transition')
-  EXECUTE PROCEDURE notify_flat_event();
+AFTER INSERT ON inbox_events
+FOR EACH ROW
+WHEN (new.data ? 'market_id' AND NOT new.data ? 'results_in_state_transition')
+EXECUTE PROCEDURE notify_flat_event();
 
 CREATE OR REPLACE FUNCTION notify_swap_event()
-  RETURNS trigger AS $$
+RETURNS trigger AS $$
 DECLARE
 BEGIN
   PERFORM pg_notify(
@@ -61,7 +61,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER notify_swap_event
-  AFTER INSERT ON inbox_events
-  FOR EACH ROW
-  WHEN (NEW.data ? 'market_id' AND NEW.data ? 'results_in_state_transition')
-  EXECUTE PROCEDURE notify_swap_event();
+AFTER INSERT ON inbox_events
+FOR EACH ROW
+WHEN (new.data ? 'market_id' AND new.data ? 'results_in_state_transition')
+EXECUTE PROCEDURE notify_swap_event();
