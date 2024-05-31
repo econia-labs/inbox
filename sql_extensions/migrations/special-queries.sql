@@ -14,20 +14,29 @@ ALTER TABLE inbox_latest_state
 ADD PRIMARY KEY (market_id);
 
 INSERT INTO inbox_latest_state
-SELECT DISTINCT ON ((data->'market_metadata'->>'market_id')::numeric)
-  *,
-  (data->'market_metadata'->>'market_id')::numeric AS market_id
+SELECT DISTINCT ON ((data -> 'market_metadata' ->> 'market_id')::NUMERIC)
+    sequence_number,
+    creation_number,
+    account_address,
+    transaction_version,
+    transaction_block_height,
+    type,
+    data,
+    inserted_at,
+    event_index,
+    indexed_type,
+    (data -> 'market_metadata' ->> 'market_id')::NUMERIC AS market_id
 FROM
-  inbox_events
+    inbox_events
 WHERE
-  REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::State')
+    REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::State')
 ORDER BY
-  (data->'market_metadata'->>'market_id')::numeric,
-  (data->>'transaction_version')::numeric DESC,
-  (data->>'event_index')::numeric DESC;
+    (data -> 'market_metadata' ->> 'market_id')::NUMERIC,
+    (data ->> 'transaction_version')::NUMERIC DESC,
+    (data ->> 'event_index')::NUMERIC DESC;
 
-CREATE OR REPLACE FUNCTION update_latest_state()
-  RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION UPDATE_LATEST_STATE()
+RETURNS TRIGGER AS $$
 BEGIN
   DELETE FROM inbox_latest_state
   WHERE (inbox_latest_state.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
@@ -38,17 +47,17 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_latest_state
-  AFTER INSERT ON inbox_events
-  FOR EACH ROW
-  WHEN (NEW.type LIKE '%::emojicoin_dot_fun::State')
-  EXECUTE PROCEDURE update_latest_state();
+AFTER INSERT ON inbox_events
+FOR EACH ROW
+WHEN (new.type LIKE '%::emojicoin_dot_fun::State')
+EXECUTE PROCEDURE UPDATE_LATEST_STATE();
 
 CREATE INDEX inbox_latest_state_by_market_cap ON inbox_events (
-  ((data->'instantaneous_stats'->>'market_cap')::numeric) DESC
+    ((data -> 'instantaneous_stats' ->> 'market_cap')::NUMERIC) DESC
 );
 
 CREATE INDEX inbox_latest_state_by_bump_time ON inbox_events (
-  ((data->'state_metadata'->>'bump_time')::numeric) DESC
+    ((data -> 'state_metadata' ->> 'bump_time')::NUMERIC) DESC
 );
 
 -- }}}
@@ -59,44 +68,46 @@ CREATE INDEX inbox_latest_state_by_bump_time ON inbox_events (
 -- auto update using triggers.
 
 CREATE TABLE inbox_volume (
-  market_id NUMERIC PRIMARY KEY,
-  all_time_volume NUMERIC NOT NULL,
-  daily_volume NUMERIC NOT NULL
+    market_id NUMERIC PRIMARY KEY,
+    all_time_volume NUMERIC NOT NULL,
+    daily_volume NUMERIC NOT NULL
 );
 
 INSERT INTO inbox_volume
 SELECT
-  (data#>>'{market_metadata,market_id}')::numeric AS market_id,
-  0::numeric AS all_time_volume,
-  SUM((data->>'volume_quote')::numeric) AS daily_volume
+    (data #>> '{market_metadata,market_id}')::NUMERIC AS market_id,
+    0::NUMERIC AS all_time_volume,
+    SUM((data ->> 'volume_quote')::NUMERIC) AS daily_volume
 FROM
-  inbox_events
+    inbox_events
 WHERE
-  REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::PeriodicState')
-AND
-  to_timestamp((data->'periodic_state_metadata'->>'start_time')::numeric / 1000) > CURRENT_TIMESTAMP - interval '1 day'
-AND
-  data->'periodic_state_metadata'->>'period' = '60000000'
+    REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::PeriodicState')
+    AND
+    TO_TIMESTAMP((data -> 'periodic_state_metadata' ->> 'start_time')::NUMERIC / 1000)
+    > CURRENT_TIMESTAMP - INTERVAL '1 day'
+    AND
+    data -> 'periodic_state_metadata' ->> 'period' = '60000000'
 GROUP BY
-  data#>>'{market_metadata,market_id}';
+    data #>> '{market_metadata,market_id}';
 
 UPDATE inbox_volume SET all_time_volume = tmp.volume
 FROM (
-  SELECT
-    SUM((data->>'volume_quote')::numeric) AS volume,
-    (data#>>'{market_metadata,market_id}')::numeric AS market_id
-  FROM
-    inbox_events
-  WHERE
-    REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::PeriodicState')
-  AND
-    data->'periodic_state_metadata'->>'period' = '900000000'
-  GROUP BY
-    data#>>'{market_metadata,market_id}') AS tmp
+    SELECT
+        (data #>> '{market_metadata,market_id}')::NUMERIC AS market_id,
+        SUM((data ->> 'volume_quote')::NUMERIC) AS volume
+    FROM
+        inbox_events
+    WHERE
+        REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::PeriodicState')
+        AND
+        data -> 'periodic_state_metadata' ->> 'period' = '900000000'
+    GROUP BY
+        data #>> '{market_metadata,market_id}'
+) AS tmp
 WHERE tmp.market_id = inbox_volume.market_id;
 
-CREATE OR REPLACE FUNCTION update_volume()
-  RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION UPDATE_VOLUME()
+RETURNS TRIGGER AS $$
 BEGIN
   IF NOT EXISTS (SELECT * FROM inbox_volume WHERE market_id = (NEW.data->'market_metadata'->>'market_id')::numeric) THEN
     INSERT INTO inbox_volume VALUES ((NEW.data->'market_metadata'->>'market_id')::numeric, 0::numeric, 0::numeric);
@@ -118,36 +129,39 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_volume
-  AFTER INSERT ON inbox_events
-  FOR EACH ROW
-  WHEN (NEW.type LIKE '%::emojicoin_dot_fun::PeriodicState' AND NEW.data->'periodic_state_metadata'->>'period' = '60000000')
-  EXECUTE PROCEDURE update_volume();
+AFTER INSERT ON inbox_events
+FOR EACH ROW
+WHEN (
+    new.type LIKE '%::emojicoin_dot_fun::PeriodicState'
+    AND new.data -> 'periodic_state_metadata' ->> 'period' = '60000000'
+)
+EXECUTE PROCEDURE UPDATE_VOLUME();
 
 CREATE INDEX inbox_latest_state_by_all_time_volume ON inbox_volume (
-  all_time_volume DESC
+    all_time_volume DESC
 );
 CREATE INDEX inbox_latest_state_by_daily_volume ON inbox_volume (
-  daily_volume DESC
+    daily_volume DESC
 );
 
 -- }}}
 
 CREATE VIEW market_data AS
 SELECT
-  inbox_latest_state.market_id,
-  (data->'instantaneous_stats'->>'market_cap')::numeric AS market_cap,
-  (data->'state_metadata'->>'bump_time')::numeric AS bump_time,
-  all_time_volume,
-  daily_volume
-FROM inbox_latest_state, inbox_volume
-WHERE inbox_latest_state.market_id = inbox_volume.market_id;
+    state.market_id,
+    (state.data -> 'instantaneous_stats' ->> 'market_cap')::NUMERIC AS market_cap,
+    (state.data -> 'state_metadata' ->> 'bump_time')::NUMERIC AS bump_time,
+    volume.all_time_volume,
+    volume.daily_volume
+FROM inbox_latest_state AS state, inbox_volume AS volume
+WHERE state.market_id = volume.market_id;
 
 CREATE INDEX inbox_indexed_type ON inbox_events (REVERSE(indexed_type));
 
 CREATE INDEX inbox_periodic_state ON inbox_events (
-  ((data->'market_metadata'->>'market_id')::numeric),
-  ((data->'periodic_state_metadata'->>'period')::numeric),
-  ((data->'periodic_state_metadata'->>'start_time')::numeric)
+    ((data -> 'market_metadata' ->> 'market_id')::NUMERIC),
+    ((data -> 'periodic_state_metadata' ->> 'period')::NUMERIC),
+    ((data -> 'periodic_state_metadata' ->> 'start_time')::NUMERIC)
 ) WHERE REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::PeriodicState');
 
 -- vim: foldmethod=marker foldenable

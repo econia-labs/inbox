@@ -18,6 +18,8 @@ econialabs
 emojicoin
 eventloop
 eventpoll
+foldenable
+foldmethod
 gcloud
 googleapis
 gserviceaccount
@@ -48,6 +50,7 @@ sqlx
 sslmode
 subnetwork
 subnetworks
+templater
 testnet
 tfstate
 tfvars
