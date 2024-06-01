@@ -197,6 +197,7 @@ SELECT
     (state.data -> 'cumulative_stats' ->> 'n_chat_messages')::NUMERIC AS n_chat_messages,
     (state.data -> 'last_swap' ->> 'avg_execution_price_q64')::NUMERIC AS avg_execution_price_q64,
     (state.data ->> 'lp_coin_supply')::NUMERIC AS lp_coin_supply,
+    (state.data -> 'market_metadata' ->> 'emoji_bytes') AS emoji_bytes,
     volume.all_time_volume,
     volume.daily_volume,
     state.data -> 'clamm_virtual_reserves' AS clamm_virtual_reserves,
