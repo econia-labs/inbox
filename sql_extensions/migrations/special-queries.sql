@@ -56,7 +56,7 @@ BEGIN
     SELECT 1
     FROM inbox_latest_state
     WHERE (inbox_latest_state.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
-      AND (inbox_latest_state.data->'state_metadata'->>'market_nonce')::numeric < (NEW.data->'state_metadata'->>'market_nonce')::numeric
+      AND (inbox_latest_state.data->'state_metadata'->>'market_nonce')::numeric > (NEW.data->'state_metadata'->>'market_nonce')::numeric
   ) THEN
     RETURN NEW;
   END IF;
