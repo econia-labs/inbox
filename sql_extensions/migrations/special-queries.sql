@@ -211,6 +211,7 @@ SELECT
     volume.all_time_volume,
     volume.daily_volume,
     (state.data -> 'market_metadata' ->> 'emoji_bytes') AS emoji_bytes,
+    (state.data -> 'market_metadata' ->> 'market_address') AS market_address,
     state.data -> 'clamm_virtual_reserves' AS clamm_virtual_reserves,
     state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves
 FROM inbox_latest_state AS state, inbox_volume AS volume
