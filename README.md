@@ -3,6 +3,9 @@
 Inbox is a simple backend server that automatically creates a REST API for your
 contract using your events.
 
+Please use the `stable` branch, or a specific git tag. `main` is used for
+development and may be unstable.
+
 ## Dependencies
 
 The only dependency you need is Docker.
