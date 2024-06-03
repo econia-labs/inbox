@@ -82,6 +82,7 @@ services:
     image: econialabs/inbox:sql_extensions
     volumes:
       - ./sql_extensions/migrations/:/migrations
+      - ./sql_extensions/sql/:/sql
 
 volumes:
   db:
