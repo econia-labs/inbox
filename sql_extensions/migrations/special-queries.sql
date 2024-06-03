@@ -92,8 +92,7 @@ BEGIN
     transaction_block_height = EXCLUDED.transaction_block_height,
     data = EXCLUDED.data,
     inserted_at = EXCLUDED.inserted_at,
-    event_index = EXCLUDED.event_index
-  WHERE (inbox_latest_state.data->'state_metadata'->>'market_nonce')::numeric < (EXCLUDED.data->'state_metadata'->>'market_nonce')::numeric;
+    event_index = EXCLUDED.event_index;
 
   RETURN NEW;
 END;
@@ -102,7 +101,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER update_latest_state
 AFTER INSERT ON inbox_events
 FOR EACH ROW
-WHEN (new.type LIKE '%::emojicoin_dot_fun::State')
+WHEN (new.event_name = 'emojicoin_dot_fun::State')
 EXECUTE PROCEDURE UPDATE_LATEST_STATE();
 
 CREATE INDEX inbox_latest_state_by_market_cap ON inbox_events (
@@ -214,7 +213,6 @@ SELECT
     (state.data -> 'market_metadata' ->> 'emoji_bytes') AS emoji_bytes,
     state.data -> 'clamm_virtual_reserves' AS clamm_virtual_reserves,
     state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves
-
 FROM inbox_latest_state AS state, inbox_volume AS volume
 WHERE state.market_id = volume.market_id;
 
