@@ -13,7 +13,20 @@ ADD COLUMN market_id NUMERIC;
 ALTER TABLE inbox_latest_state
 ADD PRIMARY KEY (market_id);
 
-INSERT INTO inbox_latest_state
+INSERT INTO inbox_latest_state (
+    sequence_number,
+    creation_number,
+    account_address,
+    transaction_version,
+    transaction_block_height,
+    type,
+    data,
+    inserted_at,
+    event_index,
+    indexed_type,
+    market_id,
+    event_name
+)
 SELECT DISTINCT ON ((data -> 'market_metadata' ->> 'market_id')::NUMERIC)
     sequence_number,
     creation_number,
@@ -25,11 +38,12 @@ SELECT DISTINCT ON ((data -> 'market_metadata' ->> 'market_id')::NUMERIC)
     inserted_at,
     event_index,
     indexed_type,
-    (data -> 'market_metadata' ->> 'market_id')::NUMERIC AS market_id
+    (data -> 'market_metadata' ->> 'market_id')::NUMERIC AS market_id,
+    event_name
 FROM
     inbox_events
 WHERE
-    REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::State')
+    event_name = 'emojicoin_dot_fun::State'
 ORDER BY
     (data -> 'market_metadata' ->> 'market_id')::NUMERIC,
     (data ->> 'transaction_version')::NUMERIC DESC,
@@ -81,7 +95,7 @@ SELECT
 FROM
     inbox_events
 WHERE
-    REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::PeriodicState')
+    event_name = 'emojicoin_dot_fun::PeriodicState'
     AND
     TO_TIMESTAMP((data -> 'periodic_state_metadata' ->> 'start_time')::NUMERIC / 1000)
     > CURRENT_TIMESTAMP - INTERVAL '1 day'
@@ -98,7 +112,7 @@ FROM (
     FROM
         inbox_events
     WHERE
-        REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::PeriodicState')
+        event_name = 'emojicoin_dot_fun::PeriodicState'
         AND
         data -> 'periodic_state_metadata' ->> 'period' = '900000000'
     GROUP BY
@@ -116,7 +130,7 @@ BEGIN
   SET
     daily_volume = (
       SELECT SUM((e.data->>'volume_quote')::numeric) FROM inbox_events e
-      WHERE REVERSE(e.indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::PeriodicState')
+      WHERE e.event_name = 'emojicoin_dot_fun::PeriodicState'
       AND to_timestamp((e.data->'periodic_state_metadata'->>'start_time')::numeric / 1000) > CURRENT_TIMESTAMP - interval '1 day'
       AND e.data->'periodic_state_metadata'->>'period' = '60000000'
       AND (e.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
@@ -132,7 +146,7 @@ CREATE TRIGGER update_volume
 AFTER INSERT ON inbox_events
 FOR EACH ROW
 WHEN (
-    new.type LIKE '%::emojicoin_dot_fun::PeriodicState'
+    new.event_name = 'emojicoin_dot_fun::PeriodicState'
     AND new.data -> 'periodic_state_metadata' ->> 'period' = '60000000'
 )
 EXECUTE PROCEDURE UPDATE_VOLUME();
@@ -150,24 +164,21 @@ CREATE VIEW market_data AS
 SELECT
     state.market_id,
     state.transaction_version,
+    volume.all_time_volume,
+    volume.daily_volume,
     (state.data -> 'instantaneous_stats' ->> 'market_cap')::NUMERIC AS market_cap,
     (state.data -> 'state_metadata' ->> 'bump_time')::NUMERIC AS bump_time,
     (state.data -> 'cumulative_stats' ->> 'n_swaps')::NUMERIC AS n_swaps,
     (state.data -> 'cumulative_stats' ->> 'n_chat_messages')::NUMERIC AS n_chat_messages,
     state.data -> 'clamm_virtual_reserves' AS clamm_virtual_reserves,
-    state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves,
-    volume.all_time_volume,
-    volume.daily_volume
+    state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves
 FROM inbox_latest_state AS state, inbox_volume AS volume
 WHERE state.market_id = volume.market_id;
-
-CREATE INDEX inbox_indexed_type ON inbox_events (REVERSE(indexed_type));
-CREATE INDEX inbox_indexed_type ON inbox_events (indexed_type);
 
 CREATE INDEX inbox_periodic_state ON inbox_events (
     ((data -> 'market_metadata' ->> 'market_id')::NUMERIC),
     ((data -> 'periodic_state_metadata' ->> 'period')::NUMERIC),
     ((data -> 'periodic_state_metadata' ->> 'start_time')::NUMERIC)
-) WHERE REVERSE(indexed_type) LIKE REVERSE('%::emojicoin_dot_fun::PeriodicState');
+) WHERE event_name = 'emojicoin_dot_fun::PeriodicState';
 
 -- vim: foldmethod=marker foldenable
