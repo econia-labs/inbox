@@ -12,7 +12,6 @@ if [ -d "$script_dir/migrations" ]; then
             psql $DATABASE_URL --single-transaction -f "$file" -c "INSERT INTO sql_extensions VALUES ('$(basename $file)');"
         fi
     done
-    psql $DATABASE_URL -t -c "NOTIFY pgrst, 'reload schema';"
 fi
 
 echo "Migrations successfully applied."
