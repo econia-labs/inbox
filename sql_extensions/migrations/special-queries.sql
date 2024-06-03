@@ -47,14 +47,19 @@ WHERE
 ORDER BY
     (data -> 'market_metadata' ->> 'market_id')::NUMERIC,
     (data ->> 'transaction_version')::NUMERIC DESC,
-    (data ->> 'event_index')::NUMERIC DESC;
+    (data -> 'state_metadata' ->> 'market_nonce')::NUMERIC DESC;
 
 CREATE OR REPLACE FUNCTION UPDATE_LATEST_STATE()
 RETURNS TRIGGER AS $$
 BEGIN
-  DELETE FROM inbox_latest_state
-  WHERE (inbox_latest_state.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
-  AND (inbox_latest_state.data->'state_metadata'->>'bump_time')::numeric <= (NEW.data->'state_metadata'->>'bump_time')::numeric;
+  IF EXISTS (
+    SELECT 1
+    FROM inbox_latest_state
+    WHERE (inbox_latest_state.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
+      AND (inbox_latest_state.data->'state_metadata'->>'market_nonce')::numeric < (NEW.data->'state_metadata'->>'market_nonce')::numeric
+  ) THEN
+    RETURN NEW;
+  END IF;
 
   INSERT INTO inbox_latest_state (
     sequence_number,
@@ -81,7 +86,14 @@ BEGIN
     NEW.event_index,
     NEW.indexed_type,
     (NEW.data -> 'market_metadata' ->> 'market_id')::numeric
-  );
+  )
+  ON CONFLICT (market_id) DO UPDATE SET
+    transaction_version = EXCLUDED.transaction_version,
+    transaction_block_height = EXCLUDED.transaction_block_height,
+    data = EXCLUDED.data,
+    inserted_at = EXCLUDED.inserted_at,
+    event_index = EXCLUDED.event_index
+  WHERE (inbox_latest_state.data->'state_metadata'->>'market_nonce')::numeric < (EXCLUDED.data->'state_metadata'->>'market_nonce')::numeric;
 
   RETURN NEW;
 END;
@@ -97,8 +109,8 @@ CREATE INDEX inbox_latest_state_by_market_cap ON inbox_events (
     ((data -> 'instantaneous_stats' ->> 'market_cap')::NUMERIC) DESC
 );
 
-CREATE INDEX inbox_latest_state_by_bump_time ON inbox_events (
-    ((data -> 'state_metadata' ->> 'bump_time')::NUMERIC) DESC
+CREATE INDEX inbox_latest_state_by_nonce ON inbox_events (
+    ((data -> 'state_metadata' ->> 'market_nonce')::NUMERIC) DESC
 );
 
 -- }}}
