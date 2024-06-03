@@ -149,14 +149,20 @@ CREATE INDEX inbox_latest_state_by_daily_volume ON inbox_volume (
 CREATE VIEW market_data AS
 SELECT
     state.market_id,
+    state.transaction_version,
     (state.data -> 'instantaneous_stats' ->> 'market_cap')::NUMERIC AS market_cap,
     (state.data -> 'state_metadata' ->> 'bump_time')::NUMERIC AS bump_time,
+    (state.data -> 'cumulative_stats' ->> 'n_swaps')::NUMERIC AS n_swaps,
+    (state.data -> 'cumulative_stats' ->> 'n_chat_messages')::NUMERIC AS n_chat_messages,
+    state.data -> 'clamm_virtual_reserves' AS clamm_virtual_reserves,
+    state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves,
     volume.all_time_volume,
     volume.daily_volume
 FROM inbox_latest_state AS state, inbox_volume AS volume
 WHERE state.market_id = volume.market_id;
 
 CREATE INDEX inbox_indexed_type ON inbox_events (REVERSE(indexed_type));
+CREATE INDEX inbox_indexed_type ON inbox_events (indexed_type);
 
 CREATE INDEX inbox_periodic_state ON inbox_events (
     ((data -> 'market_metadata' ->> 'market_id')::NUMERIC),
