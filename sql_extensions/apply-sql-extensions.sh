@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 sleep 1
 
 script_dir=$(dirname -- "$(readlink -f -- "$BASH_SOURCE")")
@@ -11,3 +13,5 @@ if [ -d "$script_dir/migrations" ]; then
         fi
     done
 fi
+
+echo "Migrations successfully applied."
