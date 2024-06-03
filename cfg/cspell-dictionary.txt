@@ -9,9 +9,11 @@ autofix
 bigdecimal
 capitalisation
 chrono
+clamm
 clippy
 cloudbuild
 cloudresourcemanager
+cpamm
 creds
 devnet
 econialabs
