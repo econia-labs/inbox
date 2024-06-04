@@ -1,4 +1,4 @@
--- LATEST EVENTS {{{
+-- LATEST STATE {{{
 
 -- Create a table containing the latest state for each market and auto update
 -- using triggers.
@@ -170,24 +170,34 @@ CREATE INDEX inbox_latest_state_by_daily_volume ON inbox_volume (
 
 -- }}}
 
+-- noqa: disable=ST06
 CREATE VIEW market_data AS
 SELECT
-    state.market_id,
+    -- General data
+    (registration.data -> 'market_metadata' ->> 'market_id')::NUMERIC AS market_id,
+    (registration.data -> 'market_metadata' ->> 'emoji_bytes') AS emoji_bytes,
+    (registration.data -> 'market_metadata' ->> 'market_address') AS market_address,
+    -- Latest state data
     state.transaction_version,
-    volume.all_time_volume,
-    volume.daily_volume,
     (state.data -> 'instantaneous_stats' ->> 'market_cap')::NUMERIC AS market_cap,
     (state.data -> 'state_metadata' ->> 'bump_time')::NUMERIC AS bump_time,
     (state.data -> 'cumulative_stats' ->> 'n_swaps')::NUMERIC AS n_swaps,
     (state.data -> 'cumulative_stats' ->> 'n_chat_messages')::NUMERIC AS n_chat_messages,
     (state.data -> 'last_swap' ->> 'avg_execution_price_q64')::NUMERIC AS avg_execution_price_q64,
     (state.data ->> 'lp_coin_supply')::NUMERIC AS lp_coin_supply,
-    (state.data -> 'market_metadata' ->> 'emoji_bytes') AS emoji_bytes,
-    (state.data -> 'market_metadata' ->> 'market_address') AS market_address,
     state.data -> 'clamm_virtual_reserves' AS clamm_virtual_reserves,
-    state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves
-FROM inbox_latest_state AS state, inbox_volume AS volume
-WHERE state.market_id = volume.market_id;
+    state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves,
+    -- Volume data
+    volume.all_time_volume,
+    volume.daily_volume
+FROM (
+    SELECT data FROM inbox_events WHERE event_name = 'emojicoin_dot_fun::MarketRegistration'
+) AS registration
+LEFT JOIN inbox_latest_state AS state
+    ON (registration.data -> 'market_metadata' ->> 'market_id')::NUMERIC = state.market_id
+LEFT JOIN inbox_volume AS volume
+    ON (registration.data -> 'market_metadata' ->> 'market_id')::NUMERIC = volume.market_id;
+-- noqa: disable=ST06
 
 CREATE INDEX inbox_periodic_state ON inbox_events (
     ((data -> 'market_metadata' ->> 'market_id')::NUMERIC),
