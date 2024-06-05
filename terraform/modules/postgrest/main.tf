@@ -30,11 +30,26 @@ resource "google_cloud_run_v2_service" "postgrest" {
       egress    = "ALL_TRAFFIC"
     }
   }
+  custom_audiences = ["vercel"]
 }
 
-resource "google_cloud_run_service_iam_policy" "no_auth_postgrest" {
+resource "google_cloud_run_service_iam_policy" "auth_postgrest" {
   location    = google_cloud_run_v2_service.postgrest.location
   project     = google_cloud_run_v2_service.postgrest.project
   service     = google_cloud_run_v2_service.postgrest.name
-  policy_data = var.no_auth_policy_data
+  policy_data = data.google_iam_policy.auth_postgrest.policy_data
+}
+
+resource "google_service_account" "vercel" {
+  account_id   = "vercel"
+  display_name = "Vercel"
+}
+
+data "google_iam_policy" "auth_postgrest" {
+  binding {
+    role = "roles/run.invoker"
+    members = [
+      join("", ["serviceAccount:vercel@", var.project_id, ".iam.gserviceaccount.com"]),
+    ]
+  }
 }
