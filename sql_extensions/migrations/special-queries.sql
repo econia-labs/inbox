@@ -1,4 +1,4 @@
--- LATEST EVENTS {{{
+-- LATEST STATE {{{
 
 -- Create a table containing the latest state for each market and auto update
 -- using triggers.
@@ -47,15 +47,25 @@ WHERE
 ORDER BY
     (data -> 'market_metadata' ->> 'market_id')::NUMERIC,
     (data ->> 'transaction_version')::NUMERIC DESC,
-    (data ->> 'event_index')::NUMERIC DESC;
+    (data -> 'state_metadata' ->> 'market_nonce')::NUMERIC DESC;
 
 CREATE OR REPLACE FUNCTION UPDATE_LATEST_STATE()
 RETURNS TRIGGER AS $$
 BEGIN
-  DELETE FROM inbox_latest_state
-  WHERE (inbox_latest_state.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
-  AND (inbox_latest_state.data->'state_metadata'->>'bump_time')::numeric <= (NEW.data->'state_metadata'->>'bump_time')::numeric;
-  INSERT INTO inbox_latest_state SELECT NEW.*;
+  INSERT INTO inbox_latest_state
+  SELECT
+    NEW.*,
+    (NEW.data -> 'market_metadata' ->> 'market_id')::NUMERIC
+  ON CONFLICT (market_id) DO UPDATE SET
+    transaction_version = EXCLUDED.transaction_version,
+    transaction_block_height = EXCLUDED.transaction_block_height,
+    data = EXCLUDED.data,
+    inserted_at = EXCLUDED.inserted_at,
+    event_index = EXCLUDED.event_index
+  WHERE
+    (inbox_latest_state.data -> 'market_metadata' ->> 'market_id')::NUMERIC = (EXCLUDED.data -> 'market_metadata' ->> 'market_id')::NUMERIC
+  AND
+    (inbox_latest_state.data -> 'state_metadata' ->> 'market_nonce')::NUMERIC < (EXCLUDED.data -> 'state_metadata' ->> 'market_nonce')::NUMERIC;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -63,15 +73,15 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER update_latest_state
 AFTER INSERT ON inbox_events
 FOR EACH ROW
-WHEN (new.type LIKE '%::emojicoin_dot_fun::State')
+WHEN (new.event_name = 'emojicoin_dot_fun::State')
 EXECUTE PROCEDURE UPDATE_LATEST_STATE();
 
 CREATE INDEX inbox_latest_state_by_market_cap ON inbox_events (
     ((data -> 'instantaneous_stats' ->> 'market_cap')::NUMERIC) DESC
 );
 
-CREATE INDEX inbox_latest_state_by_bump_time ON inbox_events (
-    ((data -> 'state_metadata' ->> 'bump_time')::NUMERIC) DESC
+CREATE INDEX inbox_latest_state_by_nonce ON inbox_events (
+    ((data -> 'state_metadata' ->> 'market_nonce')::NUMERIC) DESC
 );
 
 -- }}}
@@ -137,7 +147,7 @@ BEGIN
     ),
     all_time_volume = inbox_volume.all_time_volume + (NEW.data->>'volume_quote')::numeric
   WHERE
-    inbox_volume.market_id = (NEW.data->'market_metadata'->'market_id')::numeric;
+    inbox_volume.market_id = (NEW.data->'market_metadata'->>'market_id')::numeric;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -160,20 +170,34 @@ CREATE INDEX inbox_latest_state_by_daily_volume ON inbox_volume (
 
 -- }}}
 
+-- noqa: disable=ST06
 CREATE VIEW market_data AS
 SELECT
-    state.market_id,
+    -- General data
+    (registration.data -> 'market_metadata' ->> 'market_id')::NUMERIC AS market_id,
+    (registration.data -> 'market_metadata' ->> 'emoji_bytes') AS emoji_bytes,
+    (registration.data -> 'market_metadata' ->> 'market_address') AS market_address,
+    -- Latest state data
     state.transaction_version,
-    volume.all_time_volume,
-    volume.daily_volume,
     (state.data -> 'instantaneous_stats' ->> 'market_cap')::NUMERIC AS market_cap,
     (state.data -> 'state_metadata' ->> 'bump_time')::NUMERIC AS bump_time,
     (state.data -> 'cumulative_stats' ->> 'n_swaps')::NUMERIC AS n_swaps,
     (state.data -> 'cumulative_stats' ->> 'n_chat_messages')::NUMERIC AS n_chat_messages,
+    (state.data -> 'last_swap' ->> 'avg_execution_price_q64')::NUMERIC AS avg_execution_price_q64,
+    (state.data ->> 'lp_coin_supply')::NUMERIC AS lp_coin_supply,
     state.data -> 'clamm_virtual_reserves' AS clamm_virtual_reserves,
-    state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves
-FROM inbox_latest_state AS state, inbox_volume AS volume
-WHERE state.market_id = volume.market_id;
+    state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves,
+    -- Volume data
+    volume.all_time_volume,
+    volume.daily_volume
+FROM (
+    SELECT data FROM inbox_events WHERE event_name = 'emojicoin_dot_fun::MarketRegistration'
+) AS registration
+LEFT JOIN inbox_latest_state AS state
+    ON (registration.data -> 'market_metadata' ->> 'market_id')::NUMERIC = state.market_id
+LEFT JOIN inbox_volume AS volume
+    ON (registration.data -> 'market_metadata' ->> 'market_id')::NUMERIC = volume.market_id;
+-- noqa: disable=ST06
 
 CREATE INDEX inbox_periodic_state ON inbox_events (
     ((data -> 'market_metadata' ->> 'market_id')::NUMERIC),
