@@ -39,6 +39,7 @@ mdformat
 mosquitto
 mqtt
 mqttoptions
+noqa
 notif
 pgrep
 plpgsql
