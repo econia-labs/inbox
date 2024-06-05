@@ -29,10 +29,18 @@ module "db" {
   source           = "./modules/db"
 }
 
+module "migrations" {
+  db_conn_str_auth_proxy = module.db.db_conn_str_auth_proxy
+  db_connection_name     = module.db.db_connection_name
+  main_database          = module.db.main_database
+  credentials_file       = var.credentials_file
+  source                 = "./modules/migrations"
+}
+
 module "processor" {
   db_conn_str_private   = module.db.db_conn_str_private
   contract_address      = var.contract_address
-  migrations_complete   = module.db.migrations_complete
+  main_database         = module.db.main_database
   grpc_auth_token       = var.grpc_auth_token
   grpc_data_service_url = var.grpc_data_service_url
   source                = "./modules/processor"
@@ -47,7 +55,7 @@ module "no_auth_policy" {
 
 module "postgrest" {
   db_conn_str_private  = module.db.db_conn_str_private
-  migrations_complete  = module.db.migrations_complete
+  migrations_complete  = module.migrations.migrations_complete
   no_auth_policy_data  = module.no_auth_policy.policy_data
   postgrest_max_rows   = var.postgrest_max_rows
   region               = var.region
@@ -68,7 +76,7 @@ module "grafana" {
   db_private_ip_and_port      = module.db.db_private_ip_and_port
   grafana_admin_password      = var.grafana_admin_password
   grafana_public_password     = var.grafana_public_password
-  migrations_complete         = module.db.migrations_complete
+  migrations_complete         = module.migrations.migrations_complete
   no_auth_policy_data         = module.no_auth_policy.policy_data
   region                      = var.region
   source                      = "./modules/grafana"

@@ -1,6 +1,6 @@
 # https://github.com/hashicorp/terraform-provider-google/issues/5832
 resource "terraform_data" "instance" {
-  depends_on = [var.migrations_complete]
+  depends_on = [var.main_database]
   # Store zone since variables not accessible at destroy time.
   input = var.zone
   provisioner "local-exec" {

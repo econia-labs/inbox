@@ -18,8 +18,8 @@ output "db_private_ip_and_port" {
   value = local.db_private_ip_and_port
 }
 
-output "migrations_complete" {
-  value = terraform_data.run_migrations
+output "main_database" {
+  value = google_sql_database.database
 }
 
 output "sql_vpc_connector_id" {
