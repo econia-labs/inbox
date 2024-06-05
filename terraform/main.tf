@@ -58,6 +58,7 @@ module "postgrest" {
   migrations_complete  = module.migrations.migrations_complete
   no_auth_policy_data  = module.no_auth_policy.policy_data
   postgrest_max_rows   = var.postgrest_max_rows
+  project_id           = var.project_id
   region               = var.region
   source               = "./modules/postgrest"
   sql_vpc_connector_id = module.db.sql_vpc_connector_id
