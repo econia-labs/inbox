@@ -52,9 +52,32 @@ ORDER BY
 CREATE OR REPLACE FUNCTION UPDATE_LATEST_STATE()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO inbox_latest_state
+  INSERT INTO inbox_latest_state (
+    sequence_number,
+    creation_number,
+    account_address,
+    transaction_version,
+    transaction_block_height,
+    type,
+    data,
+    inserted_at,
+    event_index,
+    indexed_type,
+    event_name,
+    market_id
+  )
   SELECT
-    NEW.*,
+    NEW.sequence_number,
+    NEW.creation_number,
+    NEW.account_address,
+    NEW.transaction_version,
+    NEW.transaction_block_height,
+    NEW.type,
+    NEW.data,
+    NEW.inserted_at,
+    NEW.event_index,
+    NEW.indexed_type,
+    NEW.event_name,
     (NEW.data -> 'market_metadata' ->> 'market_id')::NUMERIC
   ON CONFLICT (market_id) DO UPDATE SET
     transaction_version = EXCLUDED.transaction_version,
