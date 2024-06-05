@@ -2,8 +2,8 @@
 
 set -e
 
-which jq > /dev/null 2>&1 || echo "ERROR: cannot find jq in PATH." && exit 1
-which cloud-sql-proxy > /dev/null 2>&1 || echo "ERROR: cannot find cloud-sql-proxy in PATH." && exit 1
+which jq > /dev/null 2>&1 || (echo "ERROR: cannot find jq in PATH." && exit 1)
+which cloud-sql-proxy > /dev/null 2>&1 || (echo "ERROR: cannot find cloud-sql-proxy in PATH." && exit 1)
 
 if [[ -z "$PROJECT_ID" ]]; then
     echo "Must provide PROJECT_ID in environment" 1>&2
@@ -22,6 +22,7 @@ gcloud services enable \
     iam.googleapis.com \
     run.googleapis.com \
     servicenetworking.googleapis.com \
+    serviceusage.googleapis.com \
     sqladmin.googleapis.com \
     vpcaccess.googleapis.com
 
