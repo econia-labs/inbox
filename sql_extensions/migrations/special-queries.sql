@@ -1,4 +1,4 @@
--- LATEST EVENTS {{{
+-- LATEST STATE {{{
 
 -- Create a table containing the latest state for each market and auto update
 -- using triggers.
@@ -52,48 +52,20 @@ ORDER BY
 CREATE OR REPLACE FUNCTION UPDATE_LATEST_STATE()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM inbox_latest_state
-    WHERE (inbox_latest_state.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
-      AND (inbox_latest_state.data->'state_metadata'->>'market_nonce')::numeric > (NEW.data->'state_metadata'->>'market_nonce')::numeric
-  ) THEN
-    RETURN NEW;
-  END IF;
-
-  INSERT INTO inbox_latest_state (
-    sequence_number,
-    creation_number,
-    account_address,
-    transaction_version,
-    transaction_block_height,
-    type,
-    data,
-    inserted_at,
-    event_index,
-    indexed_type,
-    market_id
-  )
-  VALUES (
-    NEW.sequence_number,
-    NEW.creation_number,
-    NEW.account_address,
-    NEW.transaction_version,
-    NEW.transaction_block_height,
-    NEW.type,
-    NEW.data,
-    NEW.inserted_at,
-    NEW.event_index,
-    NEW.indexed_type,
-    (NEW.data -> 'market_metadata' ->> 'market_id')::numeric
-  )
+  INSERT INTO inbox_latest_state
+  SELECT
+    NEW.*,
+    (NEW.data -> 'market_metadata' ->> 'market_id')::NUMERIC
   ON CONFLICT (market_id) DO UPDATE SET
     transaction_version = EXCLUDED.transaction_version,
     transaction_block_height = EXCLUDED.transaction_block_height,
     data = EXCLUDED.data,
     inserted_at = EXCLUDED.inserted_at,
-    event_index = EXCLUDED.event_index;
-
+    event_index = EXCLUDED.event_index
+  WHERE
+    (inbox_latest_state.data -> 'market_metadata' ->> 'market_id')::NUMERIC = (EXCLUDED.data -> 'market_metadata' ->> 'market_id')::NUMERIC
+  AND
+    (inbox_latest_state.data -> 'state_metadata' ->> 'market_nonce')::NUMERIC < (EXCLUDED.data -> 'state_metadata' ->> 'market_nonce')::NUMERIC;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -198,9 +170,14 @@ CREATE INDEX inbox_latest_state_by_daily_volume ON inbox_volume (
 
 -- }}}
 
+-- noqa: disable=ST06
 CREATE VIEW market_data AS
 SELECT
-    state.market_id,
+    -- General data
+    (registration.data -> 'market_metadata' ->> 'market_id')::NUMERIC AS market_id,
+    (registration.data -> 'market_metadata' ->> 'emoji_bytes') AS emoji_bytes,
+    (registration.data -> 'market_metadata' ->> 'market_address') AS market_address,
+    -- Latest state data
     state.transaction_version,
     (state.data -> 'instantaneous_stats' ->> 'market_cap')::NUMERIC AS market_cap,
     (state.data -> 'state_metadata' ->> 'bump_time')::NUMERIC AS bump_time,
@@ -208,14 +185,19 @@ SELECT
     (state.data -> 'cumulative_stats' ->> 'n_chat_messages')::NUMERIC AS n_chat_messages,
     (state.data -> 'last_swap' ->> 'avg_execution_price_q64')::NUMERIC AS avg_execution_price_q64,
     (state.data ->> 'lp_coin_supply')::NUMERIC AS lp_coin_supply,
-    volume.all_time_volume,
-    volume.daily_volume,
-    (state.data -> 'market_metadata' ->> 'emoji_bytes') AS emoji_bytes,
-    (state.data -> 'market_metadata' ->> 'market_address') AS market_address,
     state.data -> 'clamm_virtual_reserves' AS clamm_virtual_reserves,
-    state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves
-FROM inbox_latest_state AS state, inbox_volume AS volume
-WHERE state.market_id = volume.market_id;
+    state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves,
+    -- Volume data
+    volume.all_time_volume,
+    volume.daily_volume
+FROM (
+    SELECT data FROM inbox_events WHERE event_name = 'emojicoin_dot_fun::MarketRegistration'
+) AS registration
+LEFT JOIN inbox_latest_state AS state
+    ON (registration.data -> 'market_metadata' ->> 'market_id')::NUMERIC = state.market_id
+LEFT JOIN inbox_volume AS volume
+    ON (registration.data -> 'market_metadata' ->> 'market_id')::NUMERIC = volume.market_id;
+-- noqa: disable=ST06
 
 CREATE INDEX inbox_periodic_state ON inbox_events (
     ((data -> 'market_metadata' ->> 'market_id')::NUMERIC),
