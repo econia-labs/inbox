@@ -146,26 +146,10 @@ file.
 
 ### 4. Create variables file
 
-You might want to create a `terraform/variables.tfvars` file with the project variables,
-to avoid typing them out every time. Here is a template for that file:
-
-```
-organization_id         = "YOUR_ORGANIZATION_ID         (run gcloud organizations list)"
-billing_account_id      = "YOUR_BILLING_ACCOUNT_ID      (Go to GCP console > Billing)"
-project_id              = "YOUR_PROJECT_ID              (Go to GCP console > Cloud overview > Dashboard)"
-project_name            = "YOUR_PROJECT_NAME            (Go to GCP console > Cloud overview > Dashboard)"
-region                  = "YOUR_REGION                  (Probably us-central1, for complete list run: gcloud artifacts locations list)"
-zone                    = "YOUR_ZONE                    (Probably us-central1-c, for complete list run: gcloud compute zones list)"
-contract_address        = "YOUR_CONTRACT_ADDRESS        (See example.env)"
-starting_version        = "YOUR_STARTING_VERSION        (See example.env)"
-grpc_data_service_url   = "APTOS_GRPC_URL               (https://grpc.(mainnet|testnet|devnet).aptoslabs.com:443)"
-grpc_auth_token         = "YOUR_APTOS_GRPC_TOKEN        (Get one here: https://developers.aptoslabs.com/)"
-postgrest_max_rows      = "500                          (See example.env)"
-db_root_password        = "YOUR_UNIQUE_SECURE_PASSWORD"
-mosquitto_password      = "YOUR_UNIQUE_SECURE_PASSWORD"
-grafana_admin_password  = "YOUR_UNIQUE_SECURE_PASSWORD"
-grafana_public_password = "YOUR_UNIQUE_SECURE_PASSWORD"
-```
+You might want to create a `terraform/variables.tfvars` file with the project
+variables, to avoid typing them out every time.
+`terraform/variables.tfvars.template` contains an example of such a file. Copy
+it to `terraform/variables.tfvars`.
 
 ### 5. Deploying
 
