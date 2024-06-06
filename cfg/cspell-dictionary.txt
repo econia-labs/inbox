@@ -46,6 +46,7 @@ pgrep
 plpgsql
 psql
 readwrite
+recordset
 rumqttc
 rustls
 serde
@@ -62,5 +63,6 @@ testnet
 tfstate
 tfvars
 trimsuffix
+vercel
 vpcaccess
 websockets
