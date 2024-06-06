@@ -184,4 +184,11 @@ and terraform documentation.
 
 Also, you might want to try deploying on a fresh project if deployment fails.
 
+## Example
+
+If you want to take a look at what is possible to do with Inbox, take a look at
+the `emojicoin-dot-fun` branch. It shows what an advanced usage of Inbox looks
+like. The `emojicoin-dot-fun` branch contains sql extensions specially designed
+for the emojico.in website.
+
 [emojicoin dot fun]: https://github.com/econia-labs/emojicoin-dot-fun
