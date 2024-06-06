@@ -175,7 +175,7 @@ FROM (
     WHERE
         event_name = 'emojicoin_dot_fun::PeriodicState'
         AND
-        data -> 'periodic_state_metadata' ->> 'period' = '900000000'
+        data -> 'periodic_state_metadata' ->> 'period' = '60000000'
     GROUP BY
         data #>> '{market_metadata,market_id}'
 ) AS tmp
