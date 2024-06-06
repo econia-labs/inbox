@@ -6,8 +6,6 @@ variable "no_auth_policy_data" {}
 
 variable "postgrest_max_rows" {}
 
-variable "project_id" {}
-
 variable "region" {}
 
 variable "sql_vpc_connector_id" {}

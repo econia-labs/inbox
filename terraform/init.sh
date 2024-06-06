@@ -2,6 +2,7 @@
 
 set -e
 
+which gcloud > /dev/null 2>&1 || (echo "ERROR: cannot find gcloud in PATH." && exit 1)
 which jq > /dev/null 2>&1 || (echo "ERROR: cannot find jq in PATH." && exit 1)
 which cloud-sql-proxy > /dev/null 2>&1 || (echo "ERROR: cannot find cloud-sql-proxy in PATH." && exit 1)
 
