@@ -179,7 +179,14 @@ them later using the `terraform output` command.
 
 ### Running new migrations
 
-To run new migrations, run `DB_CONNECTION_NAME="$(terraform -chdir=terraform output -raw db_connection_name)" CREDENTIALS_FILE=terraform/creds.json DATABASE_URL=$(terraform -chdir=terraform output -raw db_conn_str_auth_proxy) bash terraform/modules/migrations/run-migrations.sh`.
+To run new migrations, run:
+
+```
+export DB_CONNECTION_NAME="$(terraform -chdir=terraform output -raw db_connection_name)"
+export CREDENTIALS_FILE=terraform/creds.json
+export DATABASE_URL="$(terraform -chdir=terraform output -raw db_conn_str_auth_proxy)"
+bash terraform/modules/migrations/run-migrations.sh
+````
 
 Already ran migrations will not be ran again.
 
