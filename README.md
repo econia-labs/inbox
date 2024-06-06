@@ -170,7 +170,7 @@ export DB_CONNECTION_NAME="$(terraform -chdir=terraform output -raw db_connectio
 export CREDENTIALS_FILE=terraform/creds.json
 export DATABASE_URL="$(terraform -chdir=terraform output -raw db_conn_str_auth_proxy)"
 bash terraform/modules/migrations/run-migrations.sh
-````
+```
 
 Already ran migrations will not be ran again.
 
