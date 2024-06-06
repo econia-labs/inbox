@@ -114,30 +114,51 @@ CREATE INDEX inbox_latest_state_by_nonce ON inbox_events (
 -- Create a table containing the daily and all time volume for each market and
 -- auto update using triggers.
 
+CREATE OR REPLACE FUNCTION GET_DAILY_VOLUME(jsonb)
+RETURNS NUMERIC AS $$
+DECLARE
+    res NUMERIC;
+BEGIN
+    WITH raw AS (
+        SELECT * FROM jsonb_to_recordset($1) AS x(time numeric, volume_quote numeric)
+    ),
+    less_raw AS (
+        SELECT time / 1000000 AS time, volume_quote AS volume_quote FROM raw
+    )
+    SELECT COALESCE(SUM(volume_quote), 0) INTO res FROM less_raw WHERE time > extract(epoch from (now() - interval '1 day'));
+    RETURN res;
+END;
+$$ IMMUTABLE LANGUAGE plpgsql;
+
 CREATE TABLE inbox_volume (
     market_id NUMERIC PRIMARY KEY,
     all_time_volume NUMERIC NOT NULL,
-    daily_volume NUMERIC NOT NULL
+    volume_events JSONB NOT NULL
 );
+
+CREATE FUNCTION DAILY_VOLUME(inbox_volume)
+RETURNS NUMERIC AS $$
+  SELECT GET_DAILY_VOLUME($1.volume_events);
+$$ IMMUTABLE LANGUAGE SQL;
 
 INSERT INTO inbox_volume
 SELECT
     (data #>> '{market_metadata,market_id}')::NUMERIC AS market_id,
     0::NUMERIC AS all_time_volume,
-    SUM((data ->> 'volume_quote')::NUMERIC) AS daily_volume
+    json_agg(json_build_object('time', (data->'periodic_state_metadata'->>'start_time')::numeric, 'volume_quote', (data->>'volume_quote')::numeric)) AS volume_events
 FROM
     inbox_events
 WHERE
     event_name = 'emojicoin_dot_fun::PeriodicState'
     AND
-    TO_TIMESTAMP((data -> 'periodic_state_metadata' ->> 'start_time')::NUMERIC / 1000)
-    > CURRENT_TIMESTAMP - INTERVAL '1 day'
+    (data -> 'periodic_state_metadata' ->> 'start_time')::NUMERIC / 1000000
+    > extract(epoch from (now() - interval '1 day'))
     AND
     data -> 'periodic_state_metadata' ->> 'period' = '60000000'
 GROUP BY
     data #>> '{market_metadata,market_id}';
 
-UPDATE inbox_volume SET all_time_volume = tmp.volume
+UPDATE inbox_volume SET all_time_volume = COALESCE(tmp.volume, 0)
 FROM (
     SELECT
         (data #>> '{market_metadata,market_id}')::NUMERIC AS market_id,
@@ -157,14 +178,14 @@ CREATE OR REPLACE FUNCTION UPDATE_VOLUME()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NOT EXISTS (SELECT * FROM inbox_volume WHERE market_id = (NEW.data->'market_metadata'->>'market_id')::numeric) THEN
-    INSERT INTO inbox_volume VALUES ((NEW.data->'market_metadata'->>'market_id')::numeric, 0::numeric, 0::numeric);
+    INSERT INTO inbox_volume VALUES ((NEW.data->'market_metadata'->>'market_id')::numeric, 0::numeric, '[]'::jsonb);
   END IF;
   UPDATE inbox_volume
   SET
-    daily_volume = (
-      SELECT SUM((e.data->>'volume_quote')::numeric) FROM inbox_events e
+    volume_events = (
+      SELECT json_agg(json_build_object('time', (e.data->'periodic_state_metadata'->>'start_time')::numeric, 'volume_quote', (e.data->>'volume_quote')::numeric)) FROM inbox_events e
       WHERE e.event_name = 'emojicoin_dot_fun::PeriodicState'
-      AND to_timestamp((e.data->'periodic_state_metadata'->>'start_time')::numeric / 1000) > CURRENT_TIMESTAMP - interval '1 day'
+      AND (e.data->'periodic_state_metadata'->>'start_time')::numeric / 1000000 > extract(epoch from (now() - interval '1 day'))
       AND e.data->'periodic_state_metadata'->>'period' = '60000000'
       AND (e.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
     ),
@@ -188,7 +209,7 @@ CREATE INDEX inbox_latest_state_by_all_time_volume ON inbox_volume (
     all_time_volume DESC
 );
 CREATE INDEX inbox_latest_state_by_daily_volume ON inbox_volume (
-    daily_volume DESC
+    DAILY_VOLUME(inbox_volume) DESC
 );
 
 -- }}}
@@ -211,8 +232,8 @@ SELECT
     state.data -> 'clamm_virtual_reserves' AS clamm_virtual_reserves,
     state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves,
     -- Volume data
-    volume.all_time_volume,
-    volume.daily_volume
+    COALESCE(volume.all_time_volume, 0) AS all_time_volume,
+    DAILY_VOLUME(volume)
 FROM (
     SELECT data FROM inbox_events WHERE event_name = 'emojicoin_dot_fun::MarketRegistration'
 ) AS registration
