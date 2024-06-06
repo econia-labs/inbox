@@ -114,7 +114,7 @@ CREATE INDEX inbox_latest_state_by_nonce ON inbox_events (
 -- Create a table containing the daily and all time volume for each market and
 -- auto update using triggers.
 
-CREATE OR REPLACE FUNCTION GET_DAILY_VOLUME(jsonb)
+CREATE OR REPLACE FUNCTION GET_DAILY_VOLUME(JSONB)
 RETURNS NUMERIC AS $$
 DECLARE
     res NUMERIC;
@@ -136,23 +136,30 @@ CREATE TABLE inbox_volume (
     volume_events JSONB NOT NULL
 );
 
-CREATE FUNCTION DAILY_VOLUME(inbox_volume)
+CREATE FUNCTION DAILY_VOLUME(INBOX_VOLUME)
 RETURNS NUMERIC AS $$
   SELECT GET_DAILY_VOLUME($1.volume_events);
-$$ IMMUTABLE LANGUAGE SQL;
+$$ IMMUTABLE LANGUAGE sql;
 
 INSERT INTO inbox_volume
 SELECT
     (data #>> '{market_metadata,market_id}')::NUMERIC AS market_id,
     0::NUMERIC AS all_time_volume,
-    json_agg(json_build_object('time', (data->'periodic_state_metadata'->>'start_time')::numeric, 'volume_quote', (data->>'volume_quote')::numeric)) AS volume_events
+    JSON_AGG(
+        JSON_BUILD_OBJECT(
+            'time',
+            (data -> 'periodic_state_metadata' ->> 'start_time')::NUMERIC,
+            'volume_quote',
+            (data ->> 'volume_quote')::NUMERIC
+        )
+    ) AS volume_events
 FROM
     inbox_events
 WHERE
     event_name = 'emojicoin_dot_fun::PeriodicState'
     AND
     (data -> 'periodic_state_metadata' ->> 'start_time')::NUMERIC / 1000000
-    > extract(epoch from (now() - interval '1 day'))
+    > EXTRACT(EPOCH FROM (NOW() - INTERVAL '1 day'))
     AND
     data -> 'periodic_state_metadata' ->> 'period' = '60000000'
 GROUP BY
@@ -233,7 +240,7 @@ SELECT
     state.data -> 'cpamm_real_reserves' AS cpamm_real_reserves,
     -- Volume data
     COALESCE(volume.all_time_volume, 0) AS all_time_volume,
-    DAILY_VOLUME(volume)
+    DAILY_VOLUME(volume) AS daily_volume -- noqa: RF02
 FROM (
     SELECT data FROM inbox_events WHERE event_name = 'emojicoin_dot_fun::MarketRegistration'
 ) AS registration
