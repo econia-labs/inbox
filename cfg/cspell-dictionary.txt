@@ -8,6 +8,7 @@ artifactregistry
 autofix
 bigdecimal
 capitalisation
+chdir
 chrono
 clippy
 cloudbuild
@@ -20,6 +21,7 @@ eventloop
 eventpoll
 gcloud
 googleapis
+grpc
 gserviceaccount
 hadolint
 healthcheck
@@ -42,6 +44,7 @@ rumqttc
 rustls
 serde
 servicenetworking
+serviceusage
 sqladmin
 sqlfluff
 sqlx

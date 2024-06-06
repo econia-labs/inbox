@@ -3,7 +3,7 @@ resource "terraform_data" "run_migrations" {
   depends_on = [var.main_database]
   provisioner "local-exec" {
     # Relative to DSS terraform project root.
-    command = file("modules/migrations/run-migrations.sh")
+    command = "bash ${path.module}/run-migrations.sh"
     environment = {
       DATABASE_URL       = var.db_conn_str_auth_proxy,
       DB_CONNECTION_NAME = var.db_connection_name,
@@ -26,7 +26,7 @@ resource "terraform_data" "run_migrations" {
 resource "terraform_data" "re_run_migrations" {
   depends_on = [terraform_data.run_migrations]
   provisioner "local-exec" {
-    command = file("modules/migrations/run-migrations.sh")
+    command = "bash ${path.module}/run-migrations.sh"
     environment = {
       DATABASE_URL       = var.db_conn_str_auth_proxy,
       DB_CONNECTION_NAME = var.db_connection_name,

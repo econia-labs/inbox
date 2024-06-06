@@ -63,6 +63,8 @@ SQL extensions are stored under `sql_extensions/migrations/`.
 
 The files must end with `.sql` and not be `00000_init.sql`.
 
+To run migrations, run `docker compose -p inbox -f compose.yaml restart sql_extensions`.
+
 ### Indices
 
 If you have many events, you might need indices. To create some, add an `sql`
@@ -89,11 +91,13 @@ WHERE "type" = '0x...::...::NftMinted'
 GROUP BY data->>'user_address';
 ```
 
-You must also make sure that the SQL user `web_anon` has READ access (and *READ ONLY*) to this table.
+You must also make sure that the SQL user `web_anon` has READ access (and *READ
+ONLY*) to this table.
 
 ### Events
 
-You can also use SQL extensions to create events that will then appear in MQTT. To do so, follow this example:
+You can also use SQL extensions to create events that will then appear in MQTT.
+To do so, follow this example:
 
 ```sql
 CREATE OR REPLACE FUNCTION notify_event()
@@ -112,21 +116,81 @@ CREATE TRIGGER notify_event
   EXECUTE PROCEDURE notify_event();
 ```
 
-This will emit an MQTT event with the topic as your event type for all your contract's events.
+This will emit an MQTT event with the topic as your event type for all your
+contract's events.
 
 ## Terraform
 
 You can deploy this repo on GCP using Terraform.
 
-But first, make sure you have installed the required dependencies:
+### 1. Install dependencies
 
+First, make sure you have installed the required dependencies:
+
+- `gcloud` (Google Cloud CLI tool)
 - `jq` (JSON parsing CLI tool)
 - `cloud-sql-proxy` (Google Cloud tool to connect to a database)
 
-To do so, you first need to create a GCP project.
+Also make sure to run `gcloud auth login` if this is your first time using the
+tool.
 
-Once done, run `PROJECT_ID=<YOUR_PROJECT_ID> terraform/init.sh` to enable the required Google APIs, create a service account, and download the credentials file.
+### 2. Create GCP Project
 
-Then, simply run `terraform apply -var-file variables.tfvars`.
+To deploy your project on GCP, you first need to create a GCP project.
+
+### 3. Run init script
+
+Once done, run `PROJECT_ID=<YOUR_PROJECT_ID> terraform/init.sh` to enable the
+required Google APIs, create a service account, and download the credentials
+file.
+
+### 4. Create variables file
+
+You might want to create a `terraform/variables.tfvars` file with the project variables,
+to avoid typing them out every time. Here is a template for that file:
+
+```
+organization_id         = "YOUR_ORGANIZATION_ID         (run gcloud organizations list)"
+billing_account_id      = "YOUR_BILLING_ACCOUNT_ID      (Go to GCP console > Billing)"
+project_id              = "YOUR_PROJECT_ID              (Go to GCP console > Cloud overview > Dashboard)"
+project_name            = "YOUR_PROJECT_NAME            (Go to GCP console > Cloud overview > Dashboard)"
+region                  = "YOUR_REGION                  (Probably us-central1, for complete list run: gcloud artifacts locations list)"
+zone                    = "YOUR_ZONE                    (Probably us-central1-c, for complete list run: gcloud compute zones list)"
+contract_address        = "YOUR_CONTRACT_ADDRESS        (See example.env)"
+starting_version        = "YOUR_STARTING_VERSION        (See example.env)"
+grpc_data_service_url   = "APTOS_GRPC_URL               (https://grpc.(mainnet|testnet|devnet).aptoslabs.com:443)"
+grpc_auth_token         = "YOUR_APTOS_GRPC_TOKEN        (Get one here: https://developers.aptoslabs.com/)"
+postgrest_max_rows      = "500                          (See example.env)"
+db_root_password        = "YOUR_UNIQUE_SECURE_PASSWORD"
+mosquitto_password      = "YOUR_UNIQUE_SECURE_PASSWORD"
+grafana_admin_password  = "YOUR_UNIQUE_SECURE_PASSWORD"
+grafana_public_password = "YOUR_UNIQUE_SECURE_PASSWORD"
+```
+
+### 5. Deploying
+
+Then, simply run `terraform -chdir=terraform init` and `terraform -chdir=terraform apply -var-file variables.tfvars`.
+
+**Make sure your port 5432 is not used. It is needed during the deployment process.**
+
+This will take quite a long time. Once finished, meaningful data will be shown
+like the generated URLs and IP addresses for your services. You can always get
+them later using the `terraform output` command.
+
+### Running new migrations
+
+To run new migrations, run `DB_CONNECTION_NAME="$(terraform -chdir=terraform output -raw db_connection_name)" CREDENTIALS_FILE=terraform/creds.json DATABASE_URL=$(terraform -chdir=terraform output -raw db_conn_str_auth_proxy) bash terraform/modules/migrations/run-migrations.sh`.
+
+Already ran migrations will not be ran again.
+
+### Troubleshooting
+
+The init script runs `gcloud` commands. If it fails, please check the error
+messages and GCP documentation.
+
+The deploy step runs `terraform`. If it fails, please check the error messages
+and terraform documentation.
+
+Also, you might want to try deploying on a fresh project if deployment fails.
 
 [emojicoin dot fun]: https://github.com/econia-labs/emojicoin-dot-fun
