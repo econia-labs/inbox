@@ -138,6 +138,49 @@ tool.
 
 To deploy your project on GCP, you first need to create a GCP project.
 
+1. Define a project ID and name:
+
+   ```sh
+   PROJECT_ID=<YOUR_PROJECT_ID>
+   PROJECT_NAME=<YOUR_PROJECT_NAME>
+   ```
+
+   ```sh
+   echo $PROJECT_ID
+   echo $PROJECT_NAME
+   ```
+
+1. Get your organization ID:
+
+   ```sh
+   ORGANIZATION_ID=$(gcloud organizations list --format="value(ID)")
+   echo $ORGANIZATION_ID
+   ```
+
+1. Get your billing account ID:
+
+   ```sh
+   BILLING_ACCOUNT_ID=$(
+      gcloud billing accounts list --format="value(ACCOUNT_ID)"
+   )
+   echo $BILLING_ACCOUNT_ID
+   ```
+
+1. Create project:
+
+   ```sh
+   gcloud projects create $PROJECT_ID \
+       --name $PROJECT_NAME \
+       --organization $ORGANIZATION_ID
+   ```
+
+1. Link billing account to the project:
+
+   ```sh
+   gcloud billing projects link $PROJECT_ID \
+       --billing-account $BILLING_ACCOUNT_ID
+   ```
+
 ### 3. Run init script
 
 Once done, run `PROJECT_ID=<YOUR_PROJECT_ID> terraform/init.sh` to enable the
