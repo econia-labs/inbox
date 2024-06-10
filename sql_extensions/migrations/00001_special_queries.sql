@@ -190,7 +190,11 @@ BEGIN
   UPDATE inbox_volume
   SET
     volume_events = (
-      SELECT json_agg(json_build_object('time', (e.data->'periodic_state_metadata'->>'start_time')::numeric, 'volume_quote', (e.data->>'volume_quote')::numeric)) FROM inbox_events e
+      SELECT COALESCE(
+        json_agg(json_build_object('time', (e.data->'periodic_state_metadata'->>'start_time')::numeric, 'volume_quote', (e.data->>'volume_quote')::numeric)),
+        '[]'::jsonb
+      )
+      FROM inbox_events e
       WHERE e.event_name = 'emojicoin_dot_fun::PeriodicState'
       AND (e.data->'periodic_state_metadata'->>'start_time')::numeric / 1000000 > extract(epoch from (now() - interval '1 day'))
       AND e.data->'periodic_state_metadata'->>'period' = '60000000'
