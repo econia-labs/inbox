@@ -136,17 +136,17 @@ CREATE TABLE inbox_volume (
     volume_events JSONB NOT NULL
 );
 
-CREATE FUNCTION DAILY_VOLUME(INBOX_VOLUME)
+CREATE OR REPLACE FUNCTION DAILY_VOLUME(INBOX_VOLUME)
 RETURNS NUMERIC AS $$
-  SELECT GET_DAILY_VOLUME($1.volume_events);
+  SELECT GET_DAILY_VOLUME($1.volume_events::jsonb);
 $$ IMMUTABLE LANGUAGE sql;
 
 INSERT INTO inbox_volume
 SELECT
     (data #>> '{market_metadata,market_id}')::NUMERIC AS market_id,
     0::NUMERIC AS all_time_volume,
-    JSON_AGG(
-        JSON_BUILD_OBJECT(
+    JSONB_AGG(
+        JSONB_BUILD_OBJECT(
             'time',
             (data -> 'periodic_state_metadata' ->> 'start_time')::NUMERIC,
             'volume_quote',
@@ -184,21 +184,25 @@ WHERE tmp.market_id = inbox_volume.market_id;
 CREATE OR REPLACE FUNCTION UPDATE_VOLUME()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF NOT EXISTS (SELECT * FROM inbox_volume WHERE market_id = (NEW.data->'market_metadata'->>'market_id')::numeric) THEN
-    INSERT INTO inbox_volume VALUES ((NEW.data->'market_metadata'->>'market_id')::numeric, 0::numeric, '[]'::jsonb);
-  END IF;
+  INSERT INTO inbox_volume (market_id, all_time_volume, volume_events)
+  VALUES (
+    (NEW.data->'market_metadata'->>'market_id')::numeric,
+    0::numeric,
+    '[]'::jsonb
+  )
+    ON CONFLICT (market_id) DO NOTHING;
   UPDATE inbox_volume
   SET
     volume_events = (
       SELECT COALESCE(
-        json_agg(json_build_object('time', (e.data->'periodic_state_metadata'->>'start_time')::numeric, 'volume_quote', (e.data->>'volume_quote')::numeric)),
+        jsonb_agg(jsonb_build_object('time', (e.data->'periodic_state_metadata'->>'start_time')::numeric, 'volume_quote', (e.data->>'volume_quote')::numeric)),
         '[]'::jsonb
       )
       FROM inbox_events e
       WHERE e.event_name = 'emojicoin_dot_fun::PeriodicState'
-      AND (e.data->'periodic_state_metadata'->>'start_time')::numeric / 1000000 > extract(epoch from (now() - interval '1 day'))
-      AND e.data->'periodic_state_metadata'->>'period' = '60000000'
-      AND (e.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
+        AND (e.data->'periodic_state_metadata'->>'start_time')::numeric / 1000000 > extract(epoch from (now() - interval '1 day'))
+        AND e.data->'periodic_state_metadata'->>'period' = '60000000'
+        AND (e.data->'market_metadata'->>'market_id')::numeric = (NEW.data->'market_metadata'->>'market_id')::numeric
     ),
     all_time_volume = inbox_volume.all_time_volume + (NEW.data->>'volume_quote')::numeric
   WHERE
