@@ -233,27 +233,16 @@ If you are using a branch that by default requires authentication for PostgREST,
 like the `emojicoin-dot-fun` branch, you'll need to select
 `Allow unauthenticated invocations` under `Cloud Run > postgrest > security`.
 
-### 8. Disable WebSockets certificate checking (optional)
+### 8. Issue a TLS certificate (optional)
 
-If you run `inbox` via Docker compose, the events will emit over both the `mqtt`
-protocol (`mqtt://localhost:21833`) and the `ws` protocol
-(`ws://localhost:21884`), but you can't connect to an `mqtt` channel in the
-browser.
+Note that for local development where `inbox` is running through Docker compose,
+browsers like Chrome should be able to connect to the `mqtt` endpoint over an
+unsecured `ws` localhost connection. However, when connecting to an endpoint
+from a production `mqtt` server, the connection will need to be over a secure
+`wss` connection.
 
-Since some browsers, like Chrome, require certificate authority (CA) checks, it
-is suggested that you simply disable CA checks at your browser if necessary so
-that you can use the `ws` channel (instead of `wss`). For example to disable
-checks in Chrome, you can change your Chrome settings by entering the following
-into your browser URL field:
-
-```text
-chrome://flags/#allow-insecure-localhost
-```
-
-### 9. Issue a TLS certificate (optional)
-
-For a production Terraform deployment, you'll need to issue a TLS certificate to
-the `mqtt` instance:
+Hence for a production Terraform deployment, you'll need to issue a TLS
+certificate to the `mqtt` instance:
 
 1. Get the public IP of the `mqtt` VM:
 
