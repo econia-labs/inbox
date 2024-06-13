@@ -261,7 +261,7 @@ the `mqtt` instance:
    gcloud compute instances list
    ```
 
-1. Create a DNS record for your preferred domain:
+1. Create a new custom DNS record for your preferred domain:
 
    | Host | Type | Priority | Data                 |
    | ---- | ---- | -------- | -------------------- |
@@ -305,7 +305,7 @@ the `mqtt` instance:
 1. Optionally verify you can connect via
 
    ```sh
-   curl -I http://www.<YOUR_DOMAIN>:80
+   curl -I http://<YOUR_DOMAIN>:80
    ```
 
 1. SSH into the `mqtt` VM:
