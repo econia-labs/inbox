@@ -1,3 +1,13 @@
+<!---
+cspell:word cafile
+cspell:word certbot
+cspell:word certfile
+cspell:word certonly
+cspell:word letsencrypt
+cspell:word privkey
+cspell:word wscat
+-->
+
 # Inbox - The simplest Aptos backend
 
 Inbox is a simple backend server that automatically creates a REST API for your
@@ -204,7 +214,7 @@ This will take quite a long time. Once finished, meaningful data will be shown
 like the generated URLs and IP addresses for your services. You can always get
 them later using the `terraform output` command.
 
-### Running new migrations
+### 6. Running new migrations (optional)
 
 To run new migrations, run:
 
@@ -216,6 +226,206 @@ bash terraform/modules/migrations/run-migrations.sh
 ```
 
 Already ran migrations will not be ran again.
+
+### 7. Enable unauthenticated PostgREST invocations (optional)
+
+If you are using a branch that by default requires authentication for PostgREST,
+like the `emojicoin-dot-fun` branch, you'll need to select
+`Allow unauthenticated invocations` under `Cloud Run > postgrest > security`.
+
+### 8. Issue a TLS certificate (optional)
+
+Note that for local development where `inbox` is running through Docker compose,
+browsers like Chrome should be able to connect to the `mqtt` endpoint over an
+unsecured `ws` localhost connection. However, when connecting to an endpoint
+from a production `mqtt` server, the connection will need to be over a secure
+`wss` connection.
+
+Hence for a production Terraform deployment, you'll need to issue a TLS
+certificate to the `mqtt` instance:
+
+1. Get the public IP of the `mqtt` VM:
+
+   ```sh
+   gcloud compute instances list
+   ```
+
+1. Create a new custom DNS record for your preferred domain:
+
+   | Host | Type | Priority | Data                 |
+   | ---- | ---- | -------- | -------------------- |
+   | `@`  | `A`  | N/A      | `<MQTT_EXTERNAL_IP>` |
+
+1. Verify the domain has resolved to the IP address (there may be a delay):
+
+   ```sh
+   npx wscat -c ws://<YOUR_DOMAIN>:21884
+   ```
+
+1. Get your IP address:
+
+   ```sh
+   MY_IP=$(curl --silent http://checkip.amazonaws.com)
+   ```
+
+1. Create a temporary firewall rule that will allow you to SSH into the `mqtt`
+   VM:
+
+   ```sh
+   gcloud compute firewall-rules create set-cert \
+       --allow tcp:22 \
+       --direction INGRESS \
+       --network sql-network \
+       --priority 0 \
+       --source-ranges $MY_IP/32
+   ```
+
+1. Create a temporary firewall rule that will allow `certbot` to connect:
+
+   ```sh
+   gcloud compute firewall-rules create certbot \
+       --allow tcp:80 \
+       --direction INGRESS \
+       --network sql-network \
+       --priority 0 \
+       --source-ranges 0.0.0.0/0
+   ```
+
+1. Optionally verify you can connect via
+
+   ```sh
+   curl -I http://<YOUR_DOMAIN>:80
+   ```
+
+1. SSH into the `mqtt` VM:
+
+   ```sh
+   gcloud compute ssh mqtt
+   ```
+
+1. Run:
+
+   ```sh
+   docker ps
+   ```
+
+1. Enter the container with an interactive `sh` session:
+
+   ```sh
+   docker exec -it <CONTAINER_ID> sh
+   ```
+
+1. Activate superuser:
+
+   ```sh
+   su
+   ```
+
+1. Install packages:
+
+   ```sh
+   apt update
+   apt install certbot vim
+   ```
+
+1. Try a dry run:
+
+   ```sh
+   certbot certonly --standalone --dry-run
+   ```
+
+1. If if succeeds:
+
+   ```sh
+   certbot certonly --standalone
+   ```
+
+1. Copy files:
+
+   ```sh
+   cp /etc/letsencrypt/live/<YOUR_DOMAIN>/chain.pem /cafile
+   cp /etc/letsencrypt/live/<YOUR_DOMAIN>/cert.pem /certfile
+   cp /etc/letsencrypt/live/<YOUR_DOMAIN>/privkey.pem /keyfile
+   ```
+
+1. Vim into the `mosquitto` config file:
+
+   ```sh
+   vim /mosquitto/config/mosquitto.conf
+   ```
+
+1. Under the `listener 21884` block, add TLS file lookup options and
+   `required false` so that your config looks like:
+
+   ```sh
+   per_listener_settings true
+
+   listener 21883
+   protocol mqtt
+   allow_anonymous true
+   password_file /password_file
+   acl_file /acl_file
+
+   listener 21884
+   protocol websockets
+   allow_anonymous true
+   password_file /password_file
+   acl_file /acl_file
+   # New contents below
+   certfile /certfile
+   cafile /cafile
+   keyfile /keyfile
+   require_certificate false
+   ```
+
+1. Update file privileges:
+
+   ```sh
+   chmod 755 certfile
+   chmod 755 cafile
+   chmod 755 keyfile
+   chown mosquitto:mosquitto certfile
+   chown mosquitto:mosquitto cafile
+   chown mosquitto:mosquitto keyfile
+   ```
+
+1. Exit the `su` prompt, then the container via `exit`.
+
+1. Get the container via `docker ps`.
+
+1. Restart the container via `docker restart <CONTAINER_ID>`.
+
+1. Run `docker ps` several times to verify the container is up and running.
+
+1. `exit` out of the VM.
+
+1. Verify you can connect to `wss`:
+
+   ```sh
+   npx wscat -c wss://<YOUR_DOMAIN>:21884
+   ```
+
+1. Delete the temporary firewall rules:
+
+   ```sh
+   gcloud compute firewall-rules delete set-cert
+   gcloud compute firewall-rules delete certbot
+   ```
+
+1. Pro tip: if you perform a step incorrectly, you can always start with a fresh
+   `mqtt` instance:
+
+   ```sh
+   terraform destroy -target module.mqtt -var-file variables.tfvars
+   ```
+
+   ```sh
+   terraform apply -target module.mqtt -var-file variables.tfvars
+   ```
+
+Note that GCP issues ephemeral IP addresses for VMs, which means they only
+persist for the lifetime of the resource. So if you need to start over then the
+corresponding public IP address will probably change.
 
 ### Troubleshooting
 
