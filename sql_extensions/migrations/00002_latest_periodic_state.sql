@@ -44,8 +44,7 @@ FROM
     inbox_events
 WHERE
     event_name = 'emojicoin_dot_fun::PeriodicState'
-AND
-    data -> 'periodic_state_metadata' ->> 'period' = '86400000000'
+    AND data -> 'periodic_state_metadata' ->> 'period' = '86400000000'
 ORDER BY
     (data -> 'market_metadata' ->> 'market_id')::NUMERIC,
     (data ->> 'transaction_version')::NUMERIC DESC,
