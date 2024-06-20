@@ -5,7 +5,7 @@
 
 CREATE TABLE inbox_latest_one_day_periodic_state AS
 TABLE inbox_events
-WITH NO data;
+WITH NO DATA;
 
 ALTER TABLE inbox_latest_one_day_periodic_state
 ADD COLUMN market_id NUMERIC;
@@ -102,8 +102,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Update the latest one day periodic state event for each market whenever a
-  -- new periodic state event is logged
-CREATE TRIGGER UPDATE_LATEST_ONE_DAY_PERIODIC_STATE
+-- new periodic state event is logged
+CREATE TRIGGER update_latest_one_day_periodic_state
 AFTER INSERT ON inbox_events
 FOR EACH ROW
 WHEN (new.event_name = 'emojicoin_dot_fun::PeriodicState')
@@ -242,7 +242,7 @@ CREATE INDEX inbox_latest_state_by_all_time_volume ON inbox_latest_state (
 
 -- }}}
 
--- FIX VACCUM ERROR {{{
+-- FIX VACUUM ERROR {{{
 CREATE OR REPLACE FUNCTION DAILY_VOLUME(INBOX_VOLUME)
 RETURNS NUMERIC AS $$
   SELECT public.GET_DAILY_VOLUME($1.volume_events::jsonb);
