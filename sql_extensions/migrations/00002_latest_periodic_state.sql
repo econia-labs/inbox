@@ -224,4 +224,11 @@ $$ LANGUAGE plpgsql;
 
 -- }}}
 
+-- FIX VACCUM ERROR {{{
+CREATE OR REPLACE FUNCTION DAILY_VOLUME(INBOX_VOLUME)
+RETURNS NUMERIC AS $$
+  SELECT public.GET_DAILY_VOLUME($1.volume_events::jsonb);
+$$ IMMUTABLE LANGUAGE sql;
+-- }}}
+
 -- vim: foldmethod=marker foldenable
