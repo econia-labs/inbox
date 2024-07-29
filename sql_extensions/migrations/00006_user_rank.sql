@@ -5,6 +5,7 @@ CREATE TABLE inbox_user_balance (
     PRIMARY KEY (user_address, market_id)
 );
 
+-- noqa: disable=all
 INSERT INTO inbox_user_balance
 SELECT DISTINCT ON (data ->> 'user', data -> 'market_metadata' ->> 'market_id')
     data ->> 'user',
@@ -19,6 +20,7 @@ ORDER BY
     data -> 'market_metadata' ->> 'market_id',
     transaction_version DESC,
     event_index DESC;
+-- noqa: enable=all
 
 CREATE OR REPLACE FUNCTION UPDATE_USER_BALANCE()
 RETURNS TRIGGER AS $$
@@ -53,8 +55,11 @@ SELECT
     swaps.event_index,
     swaps.indexed_type,
     swaps.event_name,
-    (swaps."data"->>'market_id')::NUMERIC AS market_id,
+    (swaps."data" ->> 'market_id')::NUMERIC AS market_id,
     inbox_user_balance.balance_as_fraction_of_circulating_supply
 FROM inbox_events AS swaps
-LEFT JOIN inbox_user_balance ON swaps.data ->> 'swapper' = inbox_user_balance.user_address AND (swaps."data" ->> 'market_id')::NUMERIC = inbox_user_balance.market_id
+LEFT JOIN inbox_user_balance
+    ON
+        swaps.data ->> 'swapper' = inbox_user_balance.user_address
+        AND (swaps."data" ->> 'market_id')::NUMERIC = inbox_user_balance.market_id
 WHERE swaps.event_name = 'emojicoin_dot_fun::Swap';
