@@ -1,20 +1,17 @@
 services:
-  mqtt:
+  publisher:
     build:
-      context: mqtt-publisher
+      context: publisher
       dockerfile: Dockerfile
     depends_on:
-      postgres:
-        condition: service_healthy
       processor:
         condition: service_started
     environment:
-      DATABASE_URL: "postgres://inbox:inbox@postgres:5432/inbox"
-      MQTT_PASSWORD: ${MOSQUITTO_PASSWORD}
-    image: econialabs/inbox:mqtt
+      PROCESSOR_WS_URL: "ws://processor:3008/ws"
+      RUST_LOG: info
+    image: econialabs/inbox:publisher
     ports:
-      - "21883:21883"
-      - "21884:21884"
+      - "3009:3009"
     restart: unless-stopped
 
   postgres:
@@ -67,6 +64,8 @@ services:
     image: econialabs/inbox:processor
     restart: unless-stopped
     stop_signal: SIGKILL
+    ports:
+      - "3008:3008"
 
   sql_extensions:
     build:
