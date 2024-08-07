@@ -37,17 +37,17 @@ repos:
       - id: fmt
         args:
           - '--manifest-path'
-          - mqtt-publisher/Cargo.toml
+          - publisher/Cargo.toml
           - '--'
       - id: cargo-check
         args:
           - '--manifest-path'
-          - mqtt-publisher/Cargo.toml
+          - publisher/Cargo.toml
           - '--'
       - id: clippy
         args:
           - '--manifest-path'
-          - mqtt-publisher/Cargo.toml
+          - publisher/Cargo.toml
           - '--'
   - repo: 'https://github.com/sqlfluff/sqlfluff'
     rev: 3.0.6

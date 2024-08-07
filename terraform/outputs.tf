@@ -79,12 +79,3 @@ output "grafana_public_password" {
   sensitive = true
   value     = var.grafana_public_password
 }
-
-output "mosquitto_password" {
-  sensitive = true
-  value     = var.mosquitto_password
-}
-
-output "mqtt_ip" {
-  value = module.mqtt.mqtt_ip
-}
