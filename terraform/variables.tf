@@ -29,5 +29,3 @@ variable "postgrest_max_rows" {}
 variable "grafana_admin_password" {}
 
 variable "grafana_public_password" {}
-
-variable "mosquitto_password" {}

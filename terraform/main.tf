@@ -64,14 +64,6 @@ module "postgrest" {
   sql_vpc_connector_id = module.db.sql_vpc_connector_id
 }
 
-module "mqtt" {
-  db_conn_str_private = module.db.db_conn_str_private
-  mosquitto_password  = var.mosquitto_password
-  source              = "./modules/mqtt"
-  sql_network_id      = module.db.sql_network_id
-  zone                = var.zone
-}
-
 module "grafana" {
   db_conn_str_private_grafana = module.db.db_conn_str_private_grafana
   db_private_ip_and_port      = module.db.db_private_ip_and_port

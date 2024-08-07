@@ -10,6 +10,5 @@ grpc_data_service_url   = "APTOS_GRPC_URL               (https://grpc.(mainnet|t
 grpc_auth_token         = "YOUR_APTOS_GRPC_TOKEN        (Get one here: https://developers.aptoslabs.com/)"
 postgrest_max_rows      = "500                          (See example.env)"
 db_root_password        = "YOUR_UNIQUE_SECURE_PASSWORD"
-mosquitto_password      = "YOUR_UNIQUE_SECURE_PASSWORD"
 grafana_admin_password  = "YOUR_UNIQUE_SECURE_PASSWORD"
 grafana_public_password = "YOUR_UNIQUE_SECURE_PASSWORD"
