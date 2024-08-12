@@ -1,8 +1,9 @@
 use tokio::sync::broadcast;
 
 mod processor_connection;
-mod sse_server;
+mod server;
 mod types;
+mod util;
 
 #[tokio::main]
 async fn main() -> Result<(), ()> {
@@ -15,7 +16,7 @@ async fn main() -> Result<(), ()> {
 
     let processor_connection = tokio::spawn(processor_connection::processor_connection(processor_url, tx2));
 
-    let sse_server = tokio::spawn(sse_server::sse_server(tx));
+    let sse_server = tokio::spawn(server::server(tx));
 
     tokio::select! {
         _ = processor_connection => {

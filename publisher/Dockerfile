@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     lld \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
-RUN cargo build --release -p publisher
+RUN cargo build --all-features --release -p publisher
 
 FROM debian:bookworm-slim
 ARG APP_DIR
