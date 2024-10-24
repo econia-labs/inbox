@@ -10,6 +10,8 @@ cspell:word wscat
 
 # Inbox - The simplest Aptos backend
 
+> :warning: THIS PROJECT IS NOT ACTIVELY MAINTAINED :warning:
+
 Inbox is a simple backend server that automatically creates a REST API for your
 contract using your events.
 
